@@ -1,0 +1,749 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 12.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     28734,        741]
+NotebookOptionsPosition[     25515,        686]
+NotebookOutlinePosition[     25853,        701]
+CellTagsIndexPosition[     25810,        698]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell["Portfolio Maximization", "Title",
+ CellChangeTimes->{{3.825951944222046*^9, 
+  3.8259519501381702`*^9}},ExpressionUUID->"382ac1a8-be22-454b-a1cc-\
+8e26e8737e7a"],
+
+Cell[CellGroupData[{
+
+Cell["Basic Return/Volatility Statistic", "Section",
+ CellChangeTimes->{{3.825951965424656*^9, 3.825951975529358*^9}, {
+  3.825952360527731*^9, 
+  3.825952361633111*^9}},ExpressionUUID->"5bb1fcaf-a013-4dbb-8e9c-\
+4a49d1ea648c"],
+
+Cell["\<\
+For a given portfolio, we can calculate the following quantity:\
+\>", "Text",
+ CellChangeTimes->{{3.825951993548512*^9, 3.825952021178891*^9}, {
+  3.825952127136311*^9, 
+  3.8259521768823338`*^9}},ExpressionUUID->"6d4ee8c7-83a1-45d5-bef1-\
+2606bf744638"],
+
+Cell[BoxData[
+ FormBox[
+  RowBox[{
+   RowBox[{"S", "(", "p", ")"}], "=", 
+   FractionBox[
+    RowBox[{
+     SubscriptBox["R", "t"], "(", "p", ")"}], 
+    RowBox[{
+     SubscriptBox["\[Sigma]", "t"], "(", "p", ")"}]]}], 
+  TraditionalForm]], "DisplayFormula",
+ CellChangeTimes->{
+  3.825952173813743*^9, {3.825952213770598*^9, 
+   3.825952220774468*^9}},ExpressionUUID->"dc74e30a-6681-4188-850b-\
+1216c4e10d80"],
+
+Cell[TextData[{
+ "Where ",
+ Cell[BoxData[
+  FormBox["p", TraditionalForm]],
+  FormatType->"TraditionalForm",ExpressionUUID->
+  "66f39708-73f4-439c-94e8-0e0e41eacd7a"],
+ " is some portfolio, ",
+ Cell[BoxData[
+  FormBox["S", TraditionalForm]],
+  FormatType->"TraditionalForm",ExpressionUUID->
+  "f3a75a69-5ce7-4cf8-ba0a-23f2140d0b35"],
+ " is the statistic we want to calculate, ",
+ Cell[BoxData[
+  FormBox["R", TraditionalForm]],
+  FormatType->"TraditionalForm",ExpressionUUID->
+  "9f8df902-3461-4c77-b99e-6e92a1c37608"],
+ " is the annualized return of the portfolio based on the data from time ",
+ Cell[BoxData[
+  FormBox["t", TraditionalForm]],
+  FormatType->"TraditionalForm",ExpressionUUID->
+  "8673f281-72f5-4858-985d-216da9309593"],
+ ", and \[Sigma] is the volatility of a portfolio based on the data from time \
+t.\nSo the \[OpenCurlyDoubleQuote]Best\[CloseCurlyDoubleQuote] portfolio \
+would be ",
+ Cell[BoxData[
+  FormBox["p", TraditionalForm]],
+  FormatType->"TraditionalForm",ExpressionUUID->
+  "0d60982c-6e6a-4b07-9488-96caf28f0945"],
+ " such that ",
+ Cell[BoxData[
+  FormBox["S", TraditionalForm]],
+  FormatType->"TraditionalForm",ExpressionUUID->
+  "cd88746a-3a8c-44ec-8cbb-621440c9f566"],
+ " is maximum, that is, the portfolio that gives the BEST return to \
+volatility ratio."
+}], "Text",
+ CellChangeTimes->{{3.8259521115776253`*^9, 3.82595211735235*^9}, {
+  3.8259521863491917`*^9, 
+  3.825952326249855*^9}},ExpressionUUID->"828187b9-4aae-4f42-a005-\
+ce0b19609b22"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Altered Statistic.", "Section",
+ CellChangeTimes->{{3.825952353751697*^9, 
+  3.825952366478238*^9}},ExpressionUUID->"99a045ca-5da5-44db-9b5b-\
+12e9fefd1a30"],
+
+Cell["\<\
+One thing I don\[CloseCurlyQuote]t like is that it allows for 0\
+\[CloseCurlyQuote]s in the denominator. And it does not allow for priority. \
+Maybe I want to opt for a safer or less safe portfolio depending on the \
+situation. It also makes it non-intuitive on how to add new factors you might \
+want to take into consideration. Let\[CloseCurlyQuote]s address each of these \
+issues.\
+\>", "Text",
+ CellChangeTimes->{{3.825952391172859*^9, 3.8259525094457083`*^9}, {
+  3.82595266190049*^9, 
+  3.825952678012422*^9}},ExpressionUUID->"5d4f5049-2023-477c-b623-\
+910902571742"],
+
+Cell[CellGroupData[{
+
+Cell["Zeroes", "Subsection",
+ CellChangeTimes->{{3.8259526486036863`*^9, 
+  3.825952656177349*^9}},ExpressionUUID->"bfe89222-0690-4be3-af8b-\
+21a3efe81129"],
+
+Cell["\<\
+To avoid zeroes, we\[CloseCurlyQuote]ll wrap each quantity in a modified \
+sigmoid (\[CapitalSigma](x)), this makes it so the values always stay between \
+0.5 and 1.5. Greater values will give a greater out put, so it still gives \
+more weight to high values (in other words, the function is monotonic.\
+\>", "Text",
+ CellChangeTimes->{{3.825952686638831*^9, 3.8259526940809717`*^9}, {
+  3.825952736908443*^9, 3.825952746522849*^9}, {3.825952896526122*^9, 
+  3.8259529631094227`*^9}, {3.825953006741849*^9, 3.8259530173616457`*^9}, {
+  3.8259531090414133`*^9, 
+  3.825953109339759*^9}},ExpressionUUID->"aec932c3-bc32-445b-92c5-\
+a5a8671ba1d7"],
+
+Cell[BoxData[
+ GraphicsBox[{{{{}, {}, 
+     TagBox[
+      {RGBColor[0.368417, 0.506779, 0.709798], AbsoluteThickness[1.6], 
+       Opacity[1.], LineBox[CompressedData["
+1:eJwt1Hs0lHkcBnDXeaPSlhRjD2bkMlppHKEh31+OTbUcOyZFO8pGJbG6oNJW
+x4YhTNMky+hk93RxTYWki3nfIk2ptOXURjVmxtgMMsyYV+O2s+fsH895zueP
+59+Htis1creJkZFRuCH/dfwNwejcHEYcjni44XS2DJZOUV0DpjEi68CHNmaO
+DNo3XOVmTGLEXtP9BX0Gu366+3RYjRHPTnP0QTwZqBYoLr+XYURTS9L2uXwZ
+HEhaE93YhhGFOkEg/6wMTrr0EHt4GCF+FsRWimQgKncWvrDCiAhFue2pBhlU
+SPNS2RYUwjNJPI+mksGyV5wIho05Mf950di8FXKQ/MgJ6XQxIxxYdKZqlxw2
+MlzSnOmmBNNHWiuslwOrnnuty8uESO311j2aloP+zB5rb4YxkScJKk3ZroAJ
+8sqFHW5GRM3Cgqe2hALa6UIfccosziqcNV3t3g8B5qcaVyZM44s8U9yJy/1Q
+jPz81p/Q479qS1Iv05QQfzFaqaqYxIep4dvYlUroqnSwMBbpcLfbUoIZMgAO
+C24y8WYtbqvK7JLKBsDSaaBrsGYcZ37wbvYo+weSt+SUVlWp8bReIup4zGeI
+a5N2OghH8JfSYsbZ5YNAXzfLfpw1iPsFs0K61YNQndgou9+sxJ9suDu8+bEK
+kjS3uAUiGS7QjHqNNQ3BqpPmMRTnXpzn1GG2t2oYrI91zy8pf4Orf3nwdd+5
+EXiXkOxxQ9GBr/0mzVYs/AJHMj34Ty/U48Q2BqMhZxRqzvqjK6uvg/2m3MBY
+lhr4+7Lexv32BIQj6fTC+2pYqA0LqGO/Ad8CMeeJ9xj0pXX4ZGT3QoyrI+/S
+rTH4cjf80RGJDPZoEh17PMbhGu/PuIR8JWjTaPs3lY6Di67W+mj5IAjsu3qi
+LDXwqcGxNSBxBF7fuXRTm6qBqN/78oYEagjzvNdZ91IDl64WtoaVjIPUDeTX
+vbRg9lPKiPkxLZgczKKVZWvhZVx1ZWS2DnLLvKqO92jh9kJqLJk8CXYPfHYO
+rJgAVxHtMxamh1KipD43cQL0GdkztZxpiOobO2ddNwFDenurKv9ZkFfD6T7l
+BPyxl9dt72yEDnKhZbGjDgTrnxfauRijgfg7HLNIHVil1ga32ZggQWzN314n
+dCAOaWltppqiVYo2jrBSBzMpO323WpmhyKKrc5s6dWCMvS5bOWOGdmV97JlU
+6cB346FHm40oKKw5mDJkQYL+Q91nm3EK2kH/mf3emYSQZIkgXEdBQJZbhK4g
+oWhK4Z+jp6AMOuI3GexEtc/XmmDoo7vdDN+FhNBt+Yw31hhqTo89vN6NhOK/
+dicJ1mDIUVDafdGDhFUdDsOWxzBErdFPeTJJOBrFKg4+gaGL7l/3XTD4YX9U
+YGYWhlafn7o2bfAW06LCwXwMVc7G8p95k3AcTX0nEWHoeVX30gQfEiT33qXk
+PMCQaI69hO9HwpLNGptWAkMx3XaZ4wZz31uJte0Y8mZ5NGz1J2GU/N4q4YVh
+b5N+3mEtCcvWNNUHf8JQ0w/939axSIhr79qaKcdQ4mK6xaIAEqo5Q7O3BjB0
+Km9jx0GDAw/RI2ijGLJcWdHoG0hCrnEQGa3B0NvlpKLU4FeCmAoBiaEGf55S
+bzDVKT1UMoWh7J3xLdx1JPz/Xyg0uoIrNvhf88Jnog==
+        "]]},
+      Annotation[#, "Charting`Private`Tag$8616#1"]& ]}, {}}, {
+    {RGBColor[1, 0, 0], Dashing[{Small, Small}], 
+     TagBox[ConicHullRegionBox[{{0, 1.5}, {1, 1.5}}],
+      "InfiniteLine"]}, 
+    {RGBColor[1, 0, 0], Dashing[{Small, Small}], 
+     TagBox[ConicHullRegionBox[{{0, 0.5}, {1, 0.5}}],
+      "InfiniteLine"]}}},
+  AspectRatio->NCache[GoldenRatio^(-1), 0.6180339887498948],
+  Axes->{True, True},
+  AxesLabel->{None, None},
+  AxesOrigin->{0, 0.4},
+  DisplayFunction->Identity,
+  Frame->{{False, False}, {False, False}},
+  FrameLabel->{{None, None}, {None, None}},
+  FrameTicks->{{Automatic, 
+     Charting`ScaledFrameTicks[{Identity, Identity}]}, {Automatic, 
+     Charting`ScaledFrameTicks[{Identity, Identity}]}},
+  GridLines->{None, None},
+  GridLinesStyle->Directive[
+    GrayLevel[0.5, 0.4]],
+  ImagePadding->All,
+  Method->{
+   "DefaultBoundaryStyle" -> Automatic, 
+    "DefaultGraphicsInteraction" -> {
+     "Version" -> 1.2, "TrackMousePosition" -> {True, False}, 
+      "Effects" -> {
+       "Highlight" -> {"ratio" -> 2}, "HighlightPoint" -> {"ratio" -> 2}, 
+        "Droplines" -> {
+         "freeformCursorMode" -> True, 
+          "placement" -> {"x" -> "All", "y" -> "None"}}}}, "DefaultMeshStyle" -> 
+    AbsolutePointSize[6], "ScalingFunctions" -> None, 
+    "CoordinatesToolOptions" -> {"DisplayFunction" -> ({
+        (Identity[#]& )[
+         Part[#, 1]], 
+        (Identity[#]& )[
+         Part[#, 2]]}& ), "CopiedValueFunction" -> ({
+        (Identity[#]& )[
+         Part[#, 1]], 
+        (Identity[#]& )[
+         Part[#, 2]]}& )}},
+  PlotLabel->FormBox["\"Modified Sigmoid Function\"", TraditionalForm],
+  PlotRange->{{-3, 3}, {0.4, 1.6}},
+  PlotRangeClipping->True,
+  PlotRangePadding->{{0, 0}, {0, 0}},
+  Ticks->{Automatic, Automatic}]], "Input",
+ CellChangeTimes->{3.825952894004869*^9, 
+  3.825952966573141*^9},ExpressionUUID->"772bcd51-5f39-4c5c-b5d8-\
+05fe2f9711a8"],
+
+Cell["\<\
+Notice that ratios that were greater before are not necessarily greater now. \
+That is:\
+\>", "Text",
+ CellChangeTimes->{{3.825952973853113*^9, 3.825953023524499*^9}, {
+  3.825953151572644*^9, 
+  3.825953168622341*^9}},ExpressionUUID->"093a2bcd-d370-4eae-80a5-\
+ad10bb595ce1"],
+
+Cell[BoxData[
+ RowBox[{
+  FractionBox[
+   SubscriptBox["a", "1"], 
+   SubscriptBox["b", "1"]], ">", 
+  RowBox[{
+   FractionBox[
+    SubscriptBox["a", "2"], 
+    SubscriptBox["b", "2"]], "  ", "DOES", " ", "NOT", " ", "IMPLY", "   ", 
+   FractionBox[
+    RowBox[{"\[CapitalSigma]", 
+     RowBox[{"(", 
+      SubscriptBox["a", "1"], ")"}]}], 
+    RowBox[{"\[CapitalSigma]", 
+     RowBox[{"(", 
+      SubscriptBox["b", "1"], ")"}]}]]}], ">", 
+  FractionBox[
+   RowBox[{"\[CapitalSigma]", 
+    RowBox[{"(", 
+     SubscriptBox["a", "2"], ")"}]}], 
+   RowBox[{"\[CapitalSigma]", 
+    RowBox[{"(", 
+     SubscriptBox["b", "2"], ")"}]}]]}]], "DisplayFormula",
+ CellChangeTimes->{{3.825953044035474*^9, 3.825953136498086*^9}, {
+  3.825953171328167*^9, 
+  3.825953181415783*^9}},ExpressionUUID->"51c503e8-ccc9-4a83-8e0b-\
+4fe92784a880"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Priority and more factors.", "Subsection",
+ CellChangeTimes->{{3.82595320893367*^9, 
+  3.825953223213455*^9}},ExpressionUUID->"a0670204-7199-46db-af19-\
+cbfd83a9c80e"],
+
+Cell["\<\
+Now that we have the zeroes issue out of the way, one way we can put in a \
+priority system for our quantities is by raising them to a power. Since \
+positive values are always greater then one (due to \[CapitalSigma]), they \
+will always increase when raised to a positive power. And similarly for \
+negative quantities. So out new statistic now looks like.\
+\>", "Text",
+ CellChangeTimes->{{3.825953300516303*^9, 
+  3.825953398551104*^9}},ExpressionUUID->"2224e7b0-021d-42d3-bda2-\
+66595f36bbd0"],
+
+Cell[BoxData[
+ FormBox[
+  RowBox[{
+   RowBox[{"S", "(", "p", ")"}], "=", 
+   FractionBox[
+    SuperscriptBox[
+     RowBox[{"\[CapitalSigma]", "[", 
+      RowBox[{
+       SubscriptBox["R", "t"], "(", "p", ")"}], "]"}], "\[Alpha]"], 
+    SuperscriptBox[
+     RowBox[{"\[CapitalSigma]", "[", 
+      RowBox[{
+       SubscriptBox["\[Sigma]", "t"], "(", "p", ")"}], "]"}], "\[Beta]"]]}], 
+  TraditionalForm]], "DisplayFormula",
+ CellChangeTimes->{
+  3.825952173813743*^9, {3.825952213770598*^9, 3.825952220774468*^9}, {
+   3.825953413936078*^9, 3.825953440961853*^9}, {3.825953680399501*^9, 
+   3.8259536838670893`*^9}},ExpressionUUID->"8e9d2d24-0ac6-405c-b795-\
+feadd0ff0da6"],
+
+Cell[TextData[{
+ "Where ",
+ Cell[BoxData[
+  FormBox["\[Alpha]", TraditionalForm]],
+  FormatType->"TraditionalForm",ExpressionUUID->
+  "274d4a21-d77e-4745-8dd8-ae1a0d81dc4e"],
+ " and ",
+ Cell[BoxData[
+  FormBox["\[Beta]", TraditionalForm]],
+  FormatType->"TraditionalForm",ExpressionUUID->
+  "0331089f-80bf-4f3c-a230-0c8cff2ec26a"],
+ " are the \[OpenCurlyQuote]weights\[CloseCurlyQuote] I want to put on the \
+return and volatility (respectivelly).\nBut wait... Remember that we\
+\[CloseCurlyQuote]re trying to find the ",
+ Cell[BoxData[
+  FormBox["p", TraditionalForm]],
+  FormatType->"TraditionalForm",ExpressionUUID->
+  "774bdb39-5c58-42de-9109-71cf287944bf"],
+ " that gives me the maximum ",
+ Cell[BoxData[
+  FormBox["S", TraditionalForm]],
+  FormatType->"TraditionalForm",ExpressionUUID->
+  "fed23f3b-6b6c-4805-8b0b-3555db8dac22"],
+ ". But that same ",
+ Cell[BoxData[
+  FormBox["p", TraditionalForm]],
+  FormatType->"TraditionalForm",ExpressionUUID->
+  "61a393f8-9e04-4860-aeb8-b1a8fb423664"],
+ " would give the same as if it was the maximum of some other monotonic \
+function of ",
+ Cell[BoxData[
+  FormBox["S", TraditionalForm]],
+  FormatType->"TraditionalForm",ExpressionUUID->
+  "3563aa26-7701-469f-9ff9-dae76f8e3202"],
+ ", say... natural log? and now we can use those nice property of logarithms \
+to make this way simpler (another reason now to have zeros). Lets define ",
+ Cell[BoxData[
+  FormBox[
+   RowBox[{
+    RowBox[{"\[ScriptCapitalL]", "(", "x", ")"}], "=", 
+    RowBox[{"ln", "(", 
+     RowBox[{"\[CapitalSigma]", "(", "x", ")"}], ")"}]}], TraditionalForm]],
+  FormatType->"TraditionalForm",ExpressionUUID->
+  "ce342fec-c5e1-4ae5-9ad3-797d07c6cec8"],
+ ". So."
+}], "Text",
+ CellChangeTimes->{{3.825953452143422*^9, 3.825953693720893*^9}, {
+  3.825953811473098*^9, 
+  3.825953818922709*^9}},ExpressionUUID->"9608748c-8dd3-4423-b72c-\
+e791f79dee7e"],
+
+Cell[BoxData[
+ FormBox[
+  RowBox[{
+   RowBox[{"Ln", "(", 
+    RowBox[{"S", "(", "p", ")"}], ")"}], "=", 
+   RowBox[{
+    RowBox[{"\[Alpha]\[ScriptCapitalL]", "(", 
+     RowBox[{
+      SubscriptBox["R", "t"], "(", "p", ")"}], ")"}], "-", 
+    RowBox[{"\[Beta]\[ScriptCapitalL]", "(", 
+     RowBox[{
+      SubscriptBox["\[Sigma]", "t"], "(", "p", ")"}], ")"}]}]}], 
+  TraditionalForm]], "DisplayFormula",
+ CellChangeTimes->{
+  3.825952173813743*^9, {3.825952213770598*^9, 3.825952220774468*^9}, {
+   3.825953413936078*^9, 3.825953440961853*^9}, {3.825953654600129*^9, 
+   3.825953700361401*^9}, {3.8259537658052683`*^9, 
+   3.825953783949399*^9}},ExpressionUUID->"41acb2e6-f9ca-4d16-abd8-\
+1ccd68a12730"],
+
+Cell["\<\
+Now look at that, I can simply set the weights. And now nothing can stop us \
+from looking at other parameters to shove in this statistic to be maximized.\
+\>", "Text",
+ CellChangeTimes->{{3.825953794805431*^9, 
+  3.825953866239047*^9}},ExpressionUUID->"df85caf4-acbd-4d38-918c-\
+a18696128196"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Time Dependend Statistic", "Section",
+ CellChangeTimes->{{3.825953880186716*^9, 
+  3.825953884040875*^9}},ExpressionUUID->"dab417fd-9fe5-43d3-9b14-\
+9af33d03b276"],
+
+Cell[TextData[{
+ "Something that bothers me is this. Say my program is gonna analyze the data \
+every hour, calculate the best portfolio, and trade accordingly. Ok, but how \
+far back do I analyze data? a month? a week? 2 hours? What is the best ",
+ Cell[BoxData[
+  FormBox[
+   FractionBox["\[CapitalDelta]t", "t"], TraditionalForm]],
+  FormatType->"TraditionalForm",ExpressionUUID->
+  "f8d73dd3-7966-4be7-a015-2ed6ec2cf90f"],
+ "ratio? What about the older data? Can I maybe analyze both but somehow give \
+more priority newer data vs older and.... oh wait, I totally can! Let\
+\[CloseCurlyQuote]s do it like this!"
+}], "Text",
+ CellChangeTimes->{{3.8259538891794987`*^9, 3.8259539012073107`*^9}, {
+  3.825953997127616*^9, 3.825954062062533*^9}, {3.825954153504562*^9, 
+  3.825954178443469*^9}, {3.8259542260425777`*^9, 
+  3.825954297446389*^9}},ExpressionUUID->"b5e988be-1b44-4d49-b93e-\
+f4d60457fbc3"],
+
+Cell[BoxData[
+ FormBox[
+  RowBox[{
+   RowBox[{"Ln", "(", 
+    RowBox[{"S", "(", "p", ")"}], ")"}], "=", 
+   RowBox[{
+    RowBox[{
+     RowBox[{
+      RowBox[{
+       SubscriptBox["w", 
+        SubscriptBox["T", "1"]], 
+       RowBox[{"\[ScriptCapitalL]", "(", 
+        RowBox[{
+         SubscriptBox["R", 
+          SubscriptBox["T", "1"]], "(", "p", ")"}], ")"}]}], "+", 
+      RowBox[{
+       SubscriptBox["w", 
+        SubscriptBox["T", "2"]], 
+       RowBox[{"\[ScriptCapitalL]", "(", 
+        RowBox[{
+         SubscriptBox["R", 
+          SubscriptBox["T", "2"]], "(", "p", ")"}], ")"}]}], "+"}], "..."}], 
+    "-", 
+    RowBox[{
+     SubscriptBox["v", 
+      SubscriptBox["T", "1"]], 
+     RowBox[{"\[ScriptCapitalL]", "(", 
+      RowBox[{
+       SubscriptBox["\[Sigma]", 
+        SubscriptBox["T", "1"]], "(", "p", ")"}], ")"}]}], "-", 
+    RowBox[{
+     SubscriptBox["v", 
+      SubscriptBox["T", "2"]], 
+     RowBox[{"\[ScriptCapitalL]", "(", 
+      RowBox[{
+       SubscriptBox["\[Sigma]", 
+        SubscriptBox["T", "2"]], "(", "p", ")"}], ")"}]}]}]}], 
+  TraditionalForm]], "DisplayFormula",
+ CellChangeTimes->{
+  3.825952173813743*^9, {3.825952213770598*^9, 3.825952220774468*^9}, {
+   3.825953413936078*^9, 3.825953440961853*^9}, {3.825953654600129*^9, 
+   3.825953700361401*^9}, {3.8259537658052683`*^9, 3.825953783949399*^9}, {
+   3.825954299532444*^9, 3.825954304817964*^9}, {3.825954757204752*^9, 
+   3.825954827181181*^9}, {3.8259548974654217`*^9, 
+   3.8259549023930817`*^9}},ExpressionUUID->"cf3e1396-a55b-4868-823e-\
+128f99225bec"],
+
+Cell[TextData[{
+ "Where ",
+ Cell[BoxData[
+  FormBox[
+   RowBox[{
+    SubscriptBox["w", 
+     SubscriptBox["T", "1"]], ",", 
+    RowBox[{
+     SubscriptBox["w", 
+      SubscriptBox["T", "2"]], "..."}]}], TraditionalForm]],
+  FormatType->"TraditionalForm",ExpressionUUID->
+  "fec5177c-7735-4eb3-afa2-693de3b7282d"],
+ "are the weights given for each of the times for the returns, and ",
+ Cell[BoxData[
+  FormBox[
+   RowBox[{
+    SubscriptBox["v", 
+     SubscriptBox["T", "1"]], ",", 
+    RowBox[{
+     SubscriptBox["v", 
+      SubscriptBox["T", "2"]], "..."}]}], TraditionalForm]],ExpressionUUID->
+  "a0365970-0291-4bd8-b4ac-af29b94b5ae8"],
+ " is the same for the volatilities. Notice that they don\[CloseCurlyQuote]t \
+need to add up to 1, since I can simply have more priority on returns then \
+weights or vice versa.\nCool let\[CloseCurlyQuote]s make this nice and \
+pretty"
+}], "Text",
+ CellChangeTimes->{{3.825954833433676*^9, 
+  3.82595499495198*^9}},ExpressionUUID->"3aff5c0b-84a6-45f3-8659-\
+7bfe0ae82a3d"],
+
+Cell[BoxData[
+ FormBox[
+  RowBox[{
+   RowBox[{"Ln", "(", 
+    RowBox[{"S", "(", "p", ")"}], ")"}], "=", 
+   RowBox[{
+    RowBox[{
+     UnderoverscriptBox["\[Sum]", 
+      RowBox[{"t", "=", 
+       SubscriptBox["t", "0"]}], "T"], 
+     RowBox[{
+      SubscriptBox["w", "t"], 
+      RowBox[{"\[ScriptCapitalL]", "(", 
+       RowBox[{
+        SubscriptBox["R", "t"], "(", "p", ")"}], ")"}]}]}], "-", 
+    RowBox[{
+     UnderoverscriptBox["\[Sum]", 
+      RowBox[{"t", "=", 
+       SubscriptBox["t", "0"]}], "T"], 
+     RowBox[{
+      SubscriptBox["v", "t"], 
+      RowBox[{"\[ScriptCapitalL]", "(", 
+       RowBox[{
+        SubscriptBox["R", "t"], "(", "p", ")"}], ")"}], "8", "p"}]}]}]}], 
+  TraditionalForm]], "DisplayFormula",
+ CellChangeTimes->{
+  3.825952173813743*^9, {3.825952213770598*^9, 3.825952220774468*^9}, {
+   3.825953413936078*^9, 3.825953440961853*^9}, {3.825953654600129*^9, 
+   3.825953700361401*^9}, {3.8259537658052683`*^9, 3.825953783949399*^9}, {
+   3.825954299532444*^9, 3.825954304817964*^9}, {3.825954757204752*^9, 
+   3.825954827181181*^9}, {3.8259548974654217`*^9, 3.8259549023930817`*^9}, {
+   3.825955014479533*^9, 3.825955085797138*^9}, {3.8259690388141747`*^9, 
+   3.825969040782947*^9}, {3.82611830321241*^9, 
+   3.826118303252821*^9}},ExpressionUUID->"089200c1-0c99-49db-bca0-\
+24b86ec4ab85"],
+
+Cell["\<\
+Now that\[CloseCurlyQuote]s a lot of parameters... We can surerly run some \
+backtests and find the BEST parameters (for whatever measure of best you want)\
+\>", "Text",
+ CellChangeTimes->{{3.825955102498667*^9, 
+  3.825955155789012*^9}},ExpressionUUID->"8c654e6b-d799-4b32-9d43-\
+01e7da9aa9b4"],
+
+Cell[BoxData[""], "Input",
+ CellChangeTimes->{{3.8259532267023363`*^9, 3.82595322882759*^9}, {
+  3.825955090962131*^9, 
+  3.825955095197053*^9}},ExpressionUUID->"44007f36-ea0a-4407-8386-\
+9b04fff75e5e"],
+
+Cell[BoxData[""], "Input",
+ CellChangeTimes->{{3.82595319640672*^9, 
+  3.825953197772471*^9}},ExpressionUUID->"6a46431c-5394-4752-b0c2-\
+77d0b4b40827"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Show", "[", "\[IndentingNewLine]", 
+  RowBox[{
+   RowBox[{"Plot", "[", 
+    RowBox[{
+     RowBox[{
+      FractionBox["1", 
+       RowBox[{"1", "+", 
+        SuperscriptBox["\[ExponentialE]", 
+         RowBox[{"-", "x"}]]}]], "+", 
+      FractionBox["1", "2"]}], ",", 
+     RowBox[{"{", 
+      RowBox[{"x", ",", 
+       RowBox[{"-", "3"}], ",", "3"}], "}"}], ",", 
+     RowBox[{"PlotRange", "\[Rule]", 
+      RowBox[{"{", 
+       RowBox[{
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"-", "3"}], ",", "3"}], "}"}], ",", 
+        RowBox[{"{", 
+         RowBox[{"0.4", ",", "1.6"}], "}"}]}], "}"}]}], ",", 
+     RowBox[{"PlotLabel", "\[Rule]", "\"\<Modified Sigmoid Function\>\""}]}], 
+    "]"}], ",", "\[IndentingNewLine]", 
+   RowBox[{"Graphics", "[", 
+    RowBox[{"{", "\[IndentingNewLine]", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{"Dashed", ",", "Red", ",", 
+        RowBox[{"InfiniteLine", "[", 
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{"0", ",", "1.5"}], "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"1", ",", "1.5"}], "}"}]}], "}"}], "]"}]}], "}"}], ",", 
+      "\[IndentingNewLine]", 
+      RowBox[{"{", 
+       RowBox[{"Dashed", ",", "Red", ",", 
+        RowBox[{"InfiniteLine", "[", 
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{"0", ",", "0.5"}], "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"1", ",", "0.5"}], "}"}]}], "}"}], "]"}]}], "}"}], ","}], 
+     "\[IndentingNewLine]", "\[IndentingNewLine]", "}"}], "]"}]}], 
+  "\[IndentingNewLine]", "]"}]], "Input",
+ CellChangeTimes->{{3.8259527518232603`*^9, 3.82595288758363*^9}},
+ CellLabel->
+  "(Debug) In[8]:=",ExpressionUUID->"1b8fcee5-128f-4989-8bb2-bf6ea1aa73fe"],
+
+Cell[BoxData[
+ GraphicsBox[{{{{}, {}, 
+     TagBox[
+      {RGBColor[0.368417, 0.506779, 0.709798], AbsoluteThickness[1.6], 
+       Opacity[1.], LineBox[CompressedData["
+1:eJwt1Hs0lHkcBnDXeaPSlhRjD2bkMlppHKEh31+OTbUcOyZFO8pGJbG6oNJW
+x4YhTNMky+hk93RxTYWki3nfIk2ptOXURjVmxtgMMsyYV+O2s+fsH895zueP
+59+Htis1creJkZFRuCH/dfwNwejcHEYcjni44XS2DJZOUV0DpjEi68CHNmaO
+DNo3XOVmTGLEXtP9BX0Gu366+3RYjRHPTnP0QTwZqBYoLr+XYURTS9L2uXwZ
+HEhaE93YhhGFOkEg/6wMTrr0EHt4GCF+FsRWimQgKncWvrDCiAhFue2pBhlU
+SPNS2RYUwjNJPI+mksGyV5wIho05Mf950di8FXKQ/MgJ6XQxIxxYdKZqlxw2
+MlzSnOmmBNNHWiuslwOrnnuty8uESO311j2aloP+zB5rb4YxkScJKk3ZroAJ
+8sqFHW5GRM3Cgqe2hALa6UIfccosziqcNV3t3g8B5qcaVyZM44s8U9yJy/1Q
+jPz81p/Q479qS1Iv05QQfzFaqaqYxIep4dvYlUroqnSwMBbpcLfbUoIZMgAO
+C24y8WYtbqvK7JLKBsDSaaBrsGYcZ37wbvYo+weSt+SUVlWp8bReIup4zGeI
+a5N2OghH8JfSYsbZ5YNAXzfLfpw1iPsFs0K61YNQndgou9+sxJ9suDu8+bEK
+kjS3uAUiGS7QjHqNNQ3BqpPmMRTnXpzn1GG2t2oYrI91zy8pf4Orf3nwdd+5
+EXiXkOxxQ9GBr/0mzVYs/AJHMj34Ty/U48Q2BqMhZxRqzvqjK6uvg/2m3MBY
+lhr4+7Lexv32BIQj6fTC+2pYqA0LqGO/Ad8CMeeJ9xj0pXX4ZGT3QoyrI+/S
+rTH4cjf80RGJDPZoEh17PMbhGu/PuIR8JWjTaPs3lY6Di67W+mj5IAjsu3qi
+LDXwqcGxNSBxBF7fuXRTm6qBqN/78oYEagjzvNdZ91IDl64WtoaVjIPUDeTX
+vbRg9lPKiPkxLZgczKKVZWvhZVx1ZWS2DnLLvKqO92jh9kJqLJk8CXYPfHYO
+rJgAVxHtMxamh1KipD43cQL0GdkztZxpiOobO2ddNwFDenurKv9ZkFfD6T7l
+BPyxl9dt72yEDnKhZbGjDgTrnxfauRijgfg7HLNIHVil1ga32ZggQWzN314n
+dCAOaWltppqiVYo2jrBSBzMpO323WpmhyKKrc5s6dWCMvS5bOWOGdmV97JlU
+6cB346FHm40oKKw5mDJkQYL+Q91nm3EK2kH/mf3emYSQZIkgXEdBQJZbhK4g
+oWhK4Z+jp6AMOuI3GexEtc/XmmDoo7vdDN+FhNBt+Yw31hhqTo89vN6NhOK/
+dicJ1mDIUVDafdGDhFUdDsOWxzBErdFPeTJJOBrFKg4+gaGL7l/3XTD4YX9U
+YGYWhlafn7o2bfAW06LCwXwMVc7G8p95k3AcTX0nEWHoeVX30gQfEiT33qXk
+PMCQaI69hO9HwpLNGptWAkMx3XaZ4wZz31uJte0Y8mZ5NGz1J2GU/N4q4YVh
+b5N+3mEtCcvWNNUHf8JQ0w/939axSIhr79qaKcdQ4mK6xaIAEqo5Q7O3BjB0
+Km9jx0GDAw/RI2ijGLJcWdHoG0hCrnEQGa3B0NvlpKLU4FeCmAoBiaEGf55S
+bzDVKT1UMoWh7J3xLdx1JPz/Xyg0uoIrNvhf88Jnog==
+        "]]},
+      Annotation[#, "Charting`Private`Tag$8616#1"]& ]}, {}}, {
+    {RGBColor[1, 0, 0], Dashing[{Small, Small}], 
+     TagBox[ConicHullRegionBox[{{0, 1.5}, {1, 1.5}}],
+      "InfiniteLine"]}, 
+    {RGBColor[1, 0, 0], Dashing[{Small, Small}], 
+     TagBox[ConicHullRegionBox[{{0, 0.5}, {1, 0.5}}],
+      "InfiniteLine"]}}},
+  AspectRatio->NCache[GoldenRatio^(-1), 0.6180339887498948],
+  Axes->{True, True},
+  AxesLabel->{None, None},
+  AxesOrigin->{0, 0.4},
+  DisplayFunction->Identity,
+  Frame->{{False, False}, {False, False}},
+  FrameLabel->{{None, None}, {None, None}},
+  FrameTicks->{{Automatic, 
+     Charting`ScaledFrameTicks[{Identity, Identity}]}, {Automatic, 
+     Charting`ScaledFrameTicks[{Identity, Identity}]}},
+  GridLines->{None, None},
+  GridLinesStyle->Directive[
+    GrayLevel[0.5, 0.4]],
+  ImagePadding->All,
+  Method->{
+   "DefaultBoundaryStyle" -> Automatic, 
+    "DefaultGraphicsInteraction" -> {
+     "Version" -> 1.2, "TrackMousePosition" -> {True, False}, 
+      "Effects" -> {
+       "Highlight" -> {"ratio" -> 2}, "HighlightPoint" -> {"ratio" -> 2}, 
+        "Droplines" -> {
+         "freeformCursorMode" -> True, 
+          "placement" -> {"x" -> "All", "y" -> "None"}}}}, "DefaultMeshStyle" -> 
+    AbsolutePointSize[6], "ScalingFunctions" -> None, 
+    "CoordinatesToolOptions" -> {"DisplayFunction" -> ({
+        (Identity[#]& )[
+         Part[#, 1]], 
+        (Identity[#]& )[
+         Part[#, 2]]}& ), "CopiedValueFunction" -> ({
+        (Identity[#]& )[
+         Part[#, 1]], 
+        (Identity[#]& )[
+         Part[#, 2]]}& )}},
+  PlotLabel->FormBox["\"Modified Sigmoid Function\"", TraditionalForm],
+  PlotRange->{{-3, 3}, {0.4, 1.6}},
+  PlotRangeClipping->True,
+  PlotRangePadding->{{0, 0}, {0, 0}},
+  Ticks->{Automatic, Automatic}]], "Output",
+ CellChangeTimes->{
+  3.825952769643221*^9, {3.825952817020445*^9, 3.825952887999617*^9}},
+ CellLabel->
+  "(Debug) Out[8]=",ExpressionUUID->"11fd15eb-c5be-4dc0-b0fe-27f8c70891c7"]
+}, Open  ]],
+
+Cell[BoxData[
+ RowBox[{"{", "}"}]], "Input",
+ CellChangeTimes->{{3.825952849498972*^9, 
+  3.825952849729369*^9}},ExpressionUUID->"5f3f5d88-1350-4476-94bd-\
+21503c9c34cd"]
+}, Open  ]]
+}, Open  ]]
+},
+WindowSize->{1868, 1035},
+WindowMargins->{{61, Automatic}, {Automatic, 4}},
+FrontEndVersion->"12.0 for Mac OS X x86 (64-bit) (April 8, 2019)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[580, 22, 167, 3, 98, "Title",ExpressionUUID->"382ac1a8-be22-454b-a1cc-8e26e8737e7a"],
+Cell[CellGroupData[{
+Cell[772, 29, 227, 4, 67, "Section",ExpressionUUID->"5bb1fcaf-a013-4dbb-8e9c-4a49d1ea648c"],
+Cell[1002, 35, 264, 6, 35, "Text",ExpressionUUID->"6d4ee8c7-83a1-45d5-bef1-2606bf744638"],
+Cell[1269, 43, 410, 13, 45, "DisplayFormula",ExpressionUUID->"dc74e30a-6681-4188-850b-1216c4e10d80"],
+Cell[1682, 58, 1480, 39, 58, "Text",ExpressionUUID->"828187b9-4aae-4f42-a005-ce0b19609b22"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[3199, 102, 163, 3, 67, "Section",ExpressionUUID->"99a045ca-5da5-44db-9b5b-12e9fefd1a30"],
+Cell[3365, 107, 584, 11, 58, "Text",ExpressionUUID->"5d4f5049-2023-477c-b623-910902571742"],
+Cell[CellGroupData[{
+Cell[3974, 122, 156, 3, 54, "Subsection",ExpressionUUID->"bfe89222-0690-4be3-af8b-21a3efe81129"],
+Cell[4133, 127, 653, 11, 35, "Text",ExpressionUUID->"aec932c3-bc32-445b-92c5-a5a8671ba1d7"],
+Cell[4789, 140, 3781, 81, 269, "Input",ExpressionUUID->"772bcd51-5f39-4c5c-b5d8-05fe2f9711a8"],
+Cell[8573, 223, 286, 7, 35, "Text",ExpressionUUID->"093a2bcd-d370-4eae-80a5-ad10bb595ce1"],
+Cell[8862, 232, 826, 26, 44, "DisplayFormula",ExpressionUUID->"51c503e8-ccc9-4a83-8e0b-4fe92784a880"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[9725, 263, 173, 3, 54, "Subsection",ExpressionUUID->"a0670204-7199-46db-af19-cbfd83a9c80e"],
+Cell[9901, 268, 508, 9, 58, "Text",ExpressionUUID->"2224e7b0-021d-42d3-bda2-66595f36bbd0"],
+Cell[10412, 279, 671, 18, 49, "DisplayFormula",ExpressionUUID->"8e9d2d24-0ac6-405c-b795-feadd0ff0da6"],
+Cell[11086, 299, 1865, 49, 81, "Text",ExpressionUUID->"9608748c-8dd3-4423-b72c-e791f79dee7e"],
+Cell[12954, 350, 702, 18, 27, "DisplayFormula",ExpressionUUID->"41acb2e6-f9ca-4d16-abd8-1ccd68a12730"],
+Cell[13659, 370, 304, 6, 35, "Text",ExpressionUUID->"df85caf4-acbd-4d38-918c-a18696128196"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[14012, 382, 169, 3, 67, "Section",ExpressionUUID->"dab417fd-9fe5-43d3-9b14-9af33d03b276"],
+Cell[14184, 387, 903, 17, 62, "Text",ExpressionUUID->"b5e988be-1b44-4d49-b93e-f4d60457fbc3"],
+Cell[15090, 406, 1554, 45, 30, "DisplayFormula",ExpressionUUID->"cf3e1396-a55b-4868-823e-128f99225bec"],
+Cell[16647, 453, 1011, 29, 61, "Text",ExpressionUUID->"3aff5c0b-84a6-45f3-8659-7bfe0ae82a3d"],
+Cell[17661, 484, 1323, 34, 56, "DisplayFormula",ExpressionUUID->"089200c1-0c99-49db-bca0-24b86ec4ab85"],
+Cell[18987, 520, 305, 6, 35, "Text",ExpressionUUID->"8c654e6b-d799-4b32-9d43-01e7da9aa9b4"],
+Cell[19295, 528, 202, 4, 30, "Input",ExpressionUUID->"44007f36-ea0a-4407-8386-9b04fff75e5e"],
+Cell[19500, 534, 151, 3, 30, "Input",ExpressionUUID->"6a46431c-5394-4752-b0c2-77d0b4b40827"],
+Cell[CellGroupData[{
+Cell[19676, 541, 1785, 50, 211, "Input",ExpressionUUID->"1b8fcee5-128f-4989-8bb2-bf6ea1aa73fe"],
+Cell[21464, 593, 3838, 82, 284, "Output",ExpressionUUID->"11fd15eb-c5be-4dc0-b0fe-27f8c70891c7"]
+}, Open  ]],
+Cell[25317, 678, 170, 4, 30, "Input",ExpressionUUID->"5f3f5d88-1350-4476-94bd-21503c9c34cd"]
+}, Open  ]]
+}, Open  ]]
+}
+]
+*)
+
