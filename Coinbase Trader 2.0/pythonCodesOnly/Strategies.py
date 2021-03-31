@@ -95,3 +95,38 @@ def maxLogSigRatio(params):
     buys, sells = ff.nicefyTrades(buys, sells, minimumTrade/totalFunds)
     
     return buys, sells, msrPort
+
+def equalWeights(params):
+    #Dictionary of all the 
+    dataDict = params['dataDict']
+    #Smallest amount in dollars a trade is allowed to happen in.
+    minimumTrade = params['minimumTrade']
+    #The current portfolio when this was called.
+    currentPortfolio = params['currentPortfolio']
+    #The total ammount of funds available (in USD)
+    totalFunds = params['totalFunds']
+    
+    #List of assets is the indexes of dataDict
+    for key in dataDict:
+        dataDict[key] = dataDict[key][max(dataDict[key].index):]
+    
+    #msrPort = ff.maximumSharpeRatio(dataDict.copy())
+    
+    ewPort = {}
+    for key in currentPortfolio.keys():
+        ewPort[key] = 1/len(dataDict)
+        
+    porA = currentPortfolio.copy()
+    porB = ewPort.copy()
+    
+    buys = {}
+    sells = {}
+    for key in porA.keys():
+        if porB[key] > porA[key]:
+            buys[key] = porB[key] - porA[key]
+        elif porB[key] < porA[key]:
+            sells[key] = porA[key] - porB[key]
+            
+    buys, sells = ff.nicefyTrades(buys, sells, minimumTrade/totalFunds)
+    
+    return buys, sells, ewPort
