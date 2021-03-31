@@ -55,55 +55,53 @@ fundsPerTime = {}
 i = 0.
 timeStart1 = datetime.datetime.now()
 for times in testTimes:
-    try:
-        timeStart2 = datetime.datetime.now()
-        pct1 = i/len(testTimes)*100.
-        header1 = uf.progressBar(pct1, time0 = timeStart1) + "\n"
-        fundsPerTime[str(times)] = []
-        goodAssets = []
-        for asset in downloadedAssets:
-            if ff.availableData(asset, times[0]) and ff.availableData(asset, times[1]):
-                goodAssets += [asset]
-        goodAssets = goodAssets + ['USD-USD']
-        tradingFeePct = 0.005
-        currentPortfolioSize = {asset:0. for asset in goodAssets}
-        currentPortfolioSize['USD-USD'] = 100.
-        dataDict = cf.getData(Client, goodAssets, start = times[0], end = times[1], granularity = 60, verbose = False, header = '')
-        currentDate = times[0] + datetime.timedelta(seconds = epochDuration)
-        iniDiff = (currentDate - times[0]).total_seconds()
-        while (currentDate - times[0]).total_seconds() < 2*epochDuration:
-            pct2 = ((currentDate - times[0]).total_seconds()-iniDiff)/(2*epochDuration)*100.
-            uf.clear()
-            print(uf.progressBar(pct2, time0 = timeStart2, header = header1))
-            dataDictSoFar = {}
-            for key in dataDict.keys():
-                dataDictSoFar[key] = dataDict[key][:currentDate]
-            totalFunds = 0
-            for key in currentPortfolioSize.keys():
-                totalFunds += currentPortfolioSize[key]*dataDictSoFar[key]['Close'][-1]
-            print(totalFunds)
-            currentPortfolio = {}
-            for key in currentPortfolioSize.keys():
-                currentPortfolio[key] = currentPortfolioSize[key]*dataDictSoFar[key]['Close'][-1]/totalFunds
+    timeStart2 = datetime.datetime.now()
+    pct1 = i/len(testTimes)*100.
+    header1 = uf.progressBar(pct1, time0 = timeStart1) + "\n"
+    fundsPerTime[str(times)] = []
+    goodAssets = []
+    for asset in downloadedAssets:
+        if ff.availableData(asset, times[0]) and ff.availableData(asset, times[1]):
+            goodAssets += [asset]
+    goodAssets = goodAssets + ['USD-USD']
+    tradingFeePct = 0.005
+    currentPortfolioSize = {asset:0. for asset in goodAssets}
+    currentPortfolioSize['USD-USD'] = 100.
+    dataDict = cf.getData(Client, goodAssets, start = times[0], end = times[1], granularity = 60, verbose = False, header = '')
+    currentDate = times[0] + datetime.timedelta(seconds = epochDuration)
+    iniDiff = (currentDate - times[0]).total_seconds()
+    while (currentDate - times[0]).total_seconds() < 2*epochDuration:
+        pct2 = ((currentDate - times[0]).total_seconds()-iniDiff)/(2*epochDuration)*100.
+        uf.clear()
+        print(uf.progressBar(pct2, time0 = timeStart2, header = header1))
+        dataDictSoFar = {}
+        for key in dataDict.keys():
+            dataDictSoFar[key] = dataDict[key][:currentDate]
+        totalFunds = 0
+        for key in currentPortfolioSize.keys():
+            totalFunds += currentPortfolioSize[key]*dataDictSoFar[key]['Close'][-1]
+        print(totalFunds)
+        currentPortfolio = {}
+        for key in currentPortfolioSize.keys():
+            currentPortfolio[key] = currentPortfolioSize[key]*dataDictSoFar[key]['Close'][-1]/totalFunds
 
-            params = {}
-            params['dataDict'] = dataDictSoFar.copy()
-            params['lookBackTime'] = 60*60*24
-            params['minimumTrade'] = 5
-            #The current portfolio when this was called.
-            params['currentPortfolio'] = currentPortfolio
-            #The total ammount of funds available (in USD)
-            params['totalFunds'] = totalFunds
-            buys, sells, bestPortfolio = sg.maxSharpeRatio(params)
-            for key in buys.keys():
-                buys[key] = buys[key]*totalFunds/(dataDictSoFar[key]['Close'][-1])
-            for key in sells.keys():
-                sells[key] = sells[key]*totalFunds/(dataDictSoFar[key]['Close'][-1])
-            currentPortfolioSize = makeFakeTrades(buys, sells, currentPortfolioSize, dataDictSoFar, tradingFeePct)        
-            currentDate += datetime.timedelta(seconds = intervalBetweenDataGather)
-            fundsPerTime[str(times)] += [totalFunds]
-    except:
-        pass;
+        params = {}
+        params['dataDict'] = dataDictSoFar.copy()
+        params['lookBackTime'] = 60*60*24
+        params['minimumTrade'] = 5
+        #The current portfolio when this was called.
+        params['currentPortfolio'] = currentPortfolio
+        #The total ammount of funds available (in USD)
+        params['totalFunds'] = totalFunds
+        buys, sells, bestPortfolio = sg.maxSharpeRatio(params)
+        for key in buys.keys():
+            buys[key] = buys[key]*totalFunds/(dataDictSoFar[key]['Close'][-1])
+        for key in sells.keys():
+            sells[key] = sells[key]*totalFunds/(dataDictSoFar[key]['Close'][-1])
+        currentPortfolioSize = makeFakeTrades(buys, sells, currentPortfolioSize, dataDictSoFar, tradingFeePct)        
+        currentDate += datetime.timedelta(seconds = intervalBetweenDataGather)
+        fundsPerTime[str(times)] += [totalFunds]
+
     i += 1
 
 with open("backtrackRestult_01.pkl", 'wb') as f:
