@@ -42,7 +42,7 @@ def dataFromFile(asset, start = None, end = None, granularity = None, verbose = 
     fileStarts = []
     fileEnds = []
     for file in listdir(path):
-        if file[-3:] == 'pkl' and eval(file.split('_')[3].split('.')[0]) == granularity:
+        if file[-3:] == 'csv' and eval(file.split('_')[3].split('.')[0]) == granularity:
             fileStarts += [eval(file.split('_')[1])]
             fileEnds += [eval(file.split('_')[2])]
     fileStarts.sort()
@@ -58,29 +58,32 @@ def dataFromFile(asset, start = None, end = None, granularity = None, verbose = 
             if verbose: print("Some of the data is too far back, retrieving only stored portions.")
             for i in range(len(fileStarts)):
                 if endStamp > fileStarts[i]:
-                    goodFiles += [asset + '_' + str(fileStarts[i]) + '_' + str(fileEnds[i]) + "_" + str(granularity) + ".pkl"]
+                    goodFiles += [asset + '_' + str(fileStarts[i]) + '_' + str(fileEnds[i]) + "_" + str(granularity) + ".csv"]
     else:
         if verbose: print('All seems to be fine, gathering data from files.')
         iniFound = False
         for i in range(len(fileStarts)):
             if fileStarts[i] <= startStamp <= fileEnds[i]:
-                goodFiles += [asset + '_' + str(fileStarts[i]) + '_' + str(fileEnds[i]) + "_" + str(granularity) + ".pkl"]
+                goodFiles += [asset + '_' + str(fileStarts[i]) + '_' + str(fileEnds[i]) + "_" + str(granularity) + ".csv"]
                 iniFound = True
             elif iniFound:
-                goodFiles += [asset + '_' + str(fileStarts[i]) + '_' + str(fileEnds[i]) + "_" + str(granularity) + ".pkl"]
+                goodFiles += [asset + '_' + str(fileStarts[i]) + '_' + str(fileEnds[i]) + "_" + str(granularity) + ".csv"]
                 
             if fileStarts[i] <= endStamp <= fileEnds[i]:
                 iniFound = False
     data = pd.DataFrame([[float('nan'),float('nan'),float('nan'),float('nan'),float('nan'),float('nan'),float('nan')]], columns = ['Date', 'Low', 'High', 'Open', 'Close', 'Volume', 'Return']).set_index('Date').sort_index().dropna()
     for file in goodFiles:
-        with open(path + '/' + file, 'rb') as f:
-            dataToAppend = pkl.load(f)
-        dataToAppend.reset_index(inplace = True)
+        #with open(path + '/' + file, 'rb') as f:
+        #    dataToAppend = pkl.load(f)
+        dataToAppend = pd.read_csv(path + '/' + file, parse_dates=['Date'])
+        #dataToAppend.reset_index(inplace = True)
         if str(list(dataToAppend.columns)) == str(['time','low','high','open','close','volume']):
             dataToAppend.columns = ['Date','Low','High','Open','Close','Volume']
             dataToAppend = dataToAppend.set_index('Date')
         if 'Return' in list(dataToAppend.columns):
             dataToAppend = dataToAppend.drop("Return", axis = 1)
+        if 'Unnamed: 0' in list(data.columns):
+            dataToAppend = dataToAppend.drop('Unnamed: 0', axis = 1)
         dataToAppend = ff.concatReturns(dataToAppend).sort_index()
         data.reset_index(inplace = True)
         dataToAppend.reset_index(inplace = True)

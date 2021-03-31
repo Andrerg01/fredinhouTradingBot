@@ -230,7 +230,7 @@ def availableData(asset, date):
     starts = []
     ends = []
     for file in listdir(path):
-        if file[-3:] == 'pkl':
+        if file[-3:] == 'csv':
             starts += [int(file.split("_")[1])]
             ends += [int(file.split("_")[2])]
     if max(ends) >= datetime.datetime.timestamp(date) and datetime.datetime.timestamp(date) >= min(starts):
