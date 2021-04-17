@@ -231,18 +231,18 @@ def makeTrades(Client, buys, sells):
                         pct -= 0.05
                         size = sells[key]*pct
                         print("Order placement not successfull, trying again with " + str(pct*100) + "% of original amount in 1 second")
-            if placed:
-                while not completed:
-                    try:
-                        orderStatus = Client.get_order(sellOrder['id'])['status']
-                    except:
-                        orderStatus = 'Error'
-                    time.sleep(1)
-                    if orderStatus == 'done':
-                        print("Order to sell " + str(size) + " " + key + " has been successfully completed.")
-                        completed = True
-                    else:
-                        print("Order did not yet complete, waiting 1 second and trying again.") 
+#             if placed:
+#                 while not completed:
+#                     try:
+#                         orderStatus = Client.get_order(sellOrder['id'])['status']
+#                     except:
+#                         orderStatus = 'Error'
+#                     time.sleep(1)
+#                     if orderStatus == 'done':
+#                         print("Order to sell " + str(size) + " " + key + " has been successfully completed.")
+#                         completed = True
+#                     else:
+#                         print("Order did not yet complete, waiting 1 second and trying again.") 
     for key in buys.keys():
         if key != 'USD-USD':
             placed = False
@@ -271,16 +271,16 @@ def makeTrades(Client, buys, sells):
                         pct -= 0.05
                         size = buys[key]*pct
                         print("Order placement not successfull, trying again with " + str(pct*100) + "% of original amount.")
-            if placed:
-                while not completed:
-                    try:
-                        orderStatus = Client.get_order(sellOrder['id'])['status']
-                    except:
-                        orderStatus = 'Error'
-                    time.sleep(1)
-                    if orderStatus == 'done':
-                        print("Order to buy " + str(size) + " " + key + " has been successfully completed.")
-                        completed = True
-                    else:
-                        print("Order did not yet complete, waiting 1 second and trying again.")
-                        print(orderStatus)    
+#             if placed:
+#                 while not completed:
+#                     try:
+#                         orderStatus = Client.get_order(sellOrder['id'])['status']
+#                     except:
+#                         orderStatus = 'Error'
+#                     time.sleep(1)
+#                     if orderStatus == 'done':
+#                         print("Order to buy " + str(size) + " " + key + " has been successfully completed.")
+#                         completed = True
+#                     else:
+#                         print("Order did not yet complete, waiting 1 second and trying again.")
+#                         print(orderStatus)    

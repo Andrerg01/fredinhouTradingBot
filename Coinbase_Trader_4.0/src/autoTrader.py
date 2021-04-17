@@ -112,8 +112,7 @@ while True:
             print(header)
             currentScores += [calculateStrategyPortfolio(allCloseData3600, assets, strategyLetter, granularity)]
         totalScores = sum(currentScores)
-        #USD score is at least as great as the maximum score
-        totalScores = np.append(totalScores, [np.max(totalScores)])
+        totalScores = np.append(totalScores, [0])
         portfolio3600 = {(assets + ['USD-USD'])[i]:totalScores[i] for i in range(len(assets + ['USD-USD']))}
         
         run1 = False
@@ -141,8 +140,7 @@ while True:
             print(header)
             currentScores += [calculateStrategyPortfolio(allCloseData21600, assets, strategyLetter, granularity)]
         totalScores = sum(currentScores)
-        #USD score is at least as great as the maximum score
-        totalScores = np.append(totalScores, [np.max(totalScores)])
+        totalScores = np.append(totalScores, [0])
         portfolio21600 = {(assets + ['USD-USD'])[i]:totalScores[i] for i in range(len(assets + ['USD-USD']))}
         
         run2 = False
@@ -169,8 +167,7 @@ while True:
             print(header)
             currentScores += [calculateStrategyPortfolio(allCloseData86400, assets, strategyLetter, granularity)]
         totalScores = sum(currentScores)
-        #USD score is at least as great as the maximum score
-        totalScores = np.append(totalScores, [np.max(totalScores)])
+        totalScores = np.append(totalScores, [0])
         portfolio86400 = {(assets + ['USD-USD'])[i]:totalScores[i] for i in range(len(assets + ['USD-USD']))}   
         
         run3 = False
@@ -183,6 +180,7 @@ while True:
         finalPortfolio = {asset:0 for asset in (assets+['USD-USD'])}
         for key in finalPortfolio.keys():
             finalPortfolio[key] = portfolio3600[key] + portfolio21600[key] + portfolio86400[key]
+        finalPortfolio['USD-USD'] = 0.001
         finalPortfolio = ff.nicefyPortfolio(finalPortfolio, 0.03)
 
         header += "Final Portfolio: " + ff.printPortfolio(finalPortfolio) + ".\n\n"
@@ -238,11 +236,15 @@ while True:
         
         hist.to_csv("/home/andrerg01/AutoTraders/fredinhouTradingBot/Coinbase_Trader_4.0/logs/hist.csv")
         
+        histTemp = hist[datetime.datetime.now() - datetime.timedelta(days = 7):].copy()
         fig, ax = plt.subplots(2, 2, figsize = [20,20/1.61])
-        ff.makePricePlot(hist, ax[0, 0])
-        ff.makeTimePortfolioPlot(hist, ax[0, 1])
-        ff.makeCurrentPortfolioPlot(hist, ax[1, 0])
-        ff.makeMarketPerformancePlot([d[hist.index[0]:hist.index[-1]]['close'].values for d in allData3600], ax[1, 1])
+        try:
+            ff.makePricePlot(histTemp, ax[0, 0])
+            ff.makeTimePortfolioPlot(histTemp, ax[0, 1])
+            ff.makeMarketPerformancePlot([d[histTemp.index[0]:]['close'].values for d in allData3600], ax[1, 0])
+            ff.makeCurrentPortfolioPlot(histTemp, ax[1, 1])
+        except:
+            pass
         fig.tight_layout()
         
         fig.savefig("/home/andrerg01/AutoTraders/fredinhouTradingBot/Coinbase_Trader_4.0/logs/PortfolioPlot.png")

@@ -250,6 +250,7 @@ def makePricePlot(hist, ax):
     ax.set_xlabel("Date")
     ax.set_ylabel("Total Funds (USD)")
     ax.set_title("Funds History")
+    ax.grid()
     
 def makeTimePortfolioPlot(hist, ax):
     everInvestedAssets = []
@@ -270,6 +271,43 @@ def makeTimePortfolioPlot(hist, ax):
     ax.set_title('Asset share in portfolio over time.')
     ax.set_xlabel("Date")
     ax.set_ylabel("Portfolio share")
+    ax.grid()
+    
+def makeTimePortfolioPlot(hist, ax):
+    boxProps = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    everInvestedAssets = []
+    for port in hist['Portfolio']:
+        for key in port.keys():
+            if port[key] > 0 and key not in everInvestedAssets:
+                everInvestedAssets += [key]
+    assetInvestOverTime = {asset:[] for asset in everInvestedAssets}
+    for port in hist['Portfolio']:
+        for asset in everInvestedAssets:
+            if asset in port.keys():
+                assetInvestOverTime[asset] += [port[asset]]
+            else:
+                assetInvestOverTime[asset] += [0]
+    for i in range(len(everInvestedAssets)):
+        if i == 0:
+            y1 = assetInvestOverTime[everInvestedAssets[i]]
+            ax.fill_between(hist.index, y1)
+            if assetInvestOverTime[everInvestedAssets[i]][-1] > 0.01:
+                x = hist.index[-1]
+                y = assetInvestOverTime[everInvestedAssets[i]][-1]/2
+                ax.text(x, y, everInvestedAssets[i], bbox = boxProps)
+        else:
+            y1 = assetInvestOverTime[everInvestedAssets[i]] + sum([np.array(assetInvestOverTime[everInvestedAssets[j]]) for j in range(i)])
+            y2 = sum([np.array(assetInvestOverTime[everInvestedAssets[j]]) for j in range(i)])
+            ax.fill_between(hist.index, y1, y2, where = y1 > y2, interpolate = True)
+            if assetInvestOverTime[everInvestedAssets[i]][-1] > 0.01:
+                x = hist.index[-1]
+                y = assetInvestOverTime[everInvestedAssets[i]][-1]/2 + sum([np.array(assetInvestOverTime[everInvestedAssets[j]]) for j in range(i)])[-1]
+                ax.text(x, y, everInvestedAssets[i], bbox = boxProps)
+    ax.set_title('Asset share in portfolio over time.')
+    ax.set_xlabel("Date")
+    ax.set_ylabel("Portfolio share")
+    ax.grid() 
+
     
 def makeCurrentPortfolioPlot(hist, ax):
     everInvestedAssets = []
@@ -284,15 +322,21 @@ def makeCurrentPortfolioPlot(hist, ax):
     ax.set_xlabel("Asset")
     ax.set_ylabel("Share in current portfolio")
     ax.set_title("Layout of current portfolio")
+    ax.grid()
 
 def makeMarketPerformancePlot(allCloseRelevant, ax):
-    funds = [1 for _ in range(len(allCloseRelevant[0]))]
-    returns = [0 for _ in range(len(allCloseRelevant[0]))]
+    equalWeightFunds = [1 for _ in range(len(allCloseRelevant[0]))]
+    
+    equalWeightReturns = [0 for _ in range(len(allCloseRelevant[0]))]
     for i in range(len(allCloseRelevant)):
         for j in range(1, len(allCloseRelevant[i])):
-            returns[j] = (allCloseRelevant[i][j] - allCloseRelevant[i][j-1])/allCloseRelevant[i][j-1]/len(allCloseRelevant)
-            funds[j] = funds[j-1]*(1+returns[j])
-    ax.plot(funds)
+            equalWeightReturns[j] = (allCloseRelevant[i][j] - allCloseRelevant[i][j-1])/allCloseRelevant[i][j-1]/len(allCloseRelevant)
+            equalWeightFunds[j] = equalWeightFunds[j-1]*(1+equalWeightReturns[j])
+    ax.plot(equalWeightFunds, '--', color = 'blue', label = 'Equally Weighted Backtest')    
     ax.set_title("Market Performance")
     ax.set_ylabel("Equally Weighted Portfolio Funds")
     ax.set_xlabel("Periods")
+    ax.legend(loc='upper left')
+    ax.grid()
+
+    
