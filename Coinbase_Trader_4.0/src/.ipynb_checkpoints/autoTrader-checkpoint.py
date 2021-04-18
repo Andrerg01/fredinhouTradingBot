@@ -43,10 +43,11 @@ def calculateStrategyPortfolio(allCloseData, assets, strategyLetter, granularity
     return currentScore
 
 #Assets to be considered for purchasing
-assets = ['AAVE-USD', 'ADA-USD', 'ALGO-USD', 'ATOM-USD', 'BAL-USD', 'BAND-USD', 'BCH-USD', 'BNT-USD', 'BTC-USD', 'CGLD-USD', 'COMP-USD',\
-                 'DASH-USD', 'EOS-USD', 'ETC-USD', 'ETH-USD', 'FIL-USD', 'GRT-USD', 'KNC-USD', 'LINK-USD', 'LRC-USD', 'LTC-USD', 'MATIC-USD',\
-                 'MKR-USD', 'NMR-USD', 'NU-USD', 'OMG-USD', 'OXT-USD', 'REN-USD', 'REP-USD', 'SKL-USD', 'SNX-USD', 'SUSHI-USD', 'UMA-USD',
-                 'UNI-USD','WBTC-USD', 'XLM-USD', 'XTZ-USD', 'YFI-USD', 'ZEC-USD', 'ZRX-USD']
+#assets = ['AAVE-USD', 'ADA-USD', 'ALGO-USD', 'ATOM-USD', 'BAL-USD', 'BAND-USD', 'BCH-USD', 'BNT-USD', 'BTC-USD', 'CGLD-USD', 'COMP-USD',\
+#                 'DASH-USD', 'EOS-USD', 'ETC-USD', 'ETH-USD', 'FIL-USD', 'GRT-USD', 'KNC-USD', 'LINK-USD', 'LRC-USD', 'LTC-USD', 'MATIC-USD',\
+#                 'MKR-USD', 'NMR-USD', 'NU-USD', 'OMG-USD', 'OXT-USD', 'REN-USD', 'REP-USD', 'SKL-USD', 'SNX-USD', 'SUSHI-USD', 'UMA-USD',
+#                 'UNI-USD','WBTC-USD', 'XLM-USD', 'XTZ-USD', 'YFI-USD', 'ZEC-USD', 'ZRX-USD']
+assets = ['ALGO-USD', 'BCH-USD', 'BTC-USD', 'DASH-USD', 'EOS-USD', 'ETC-USD', 'ETH-USD', 'LINK-USD', 'LTC-USD', 'OXT-USD', 'REP-USD', 'XLM-USD', 'XTZ-USD', 'ZRX-USD']
 
 with open('/home/andrerg01/AutoTraders/fredinhouTradingBot_Pvt/coinbase_credentials.pkl', 'rb') as f:
     credentials = pkl.load(f)
@@ -95,6 +96,29 @@ while True:
     start = datetime.datetime(2016,3,27)
     end = datetime.datetime.now()
 
+#     if run1:
+#         granularity = 60*60
+
+#         header += "Loading data for all assets at granularity " + str(granularity) + ".\n\n"
+#         os.system("clear")
+#         print(header)
+
+#         allData3600 = [cf.getData(Client, asset, start, end, granularity = granularity) for asset in assets]
+#         allCloseData3600 = np.array([d['close'].values for d in allData3600])
+
+#         currentScores = []
+#         for strategyLetter in ['A', 'B', 'C']:
+#             header += "Loading optimal parameters for strategy " + strategyLetter + " at granularity " + str(granularity) + ".\n\n"
+#             os.system("clear")
+#             print(header)
+#             currentScores += [calculateStrategyPortfolio(allCloseData3600, assets, strategyLetter, granularity)]
+#         totalScores = sum(currentScores)
+#         totalScores = np.append(totalScores, [0])
+#         portfolio3600 = {(assets + ['USD-USD'])[i]:totalScores[i] for i in range(len(assets + ['USD-USD']))}
+        
+#         run1 = False
+#         time1 = datetime.datetime.now()        
+
     if run1:
         granularity = 60*60
 
@@ -105,49 +129,32 @@ while True:
         allData3600 = [cf.getData(Client, asset, start, end, granularity = granularity) for asset in assets]
         allCloseData3600 = np.array([d['close'].values for d in allData3600])
 
-        currentScores = []
-        for strategyLetter in ['A', 'B', 'C']:
-            header += "Loading optimal parameters for strategy " + strategyLetter + " at granularity " + str(granularity) + ".\n\n"
-            os.system("clear")
-            print(header)
-            currentScores += [calculateStrategyPortfolio(allCloseData3600, assets, strategyLetter, granularity)]
-        totalScores = sum(currentScores)
-        totalScores = np.append(totalScores, [0])
-        portfolio3600 = {(assets + ['USD-USD'])[i]:totalScores[i] for i in range(len(assets + ['USD-USD']))}
-        
         run1 = False
-        time1 = datetime.datetime.now()
+        time1 = datetime.datetime.now()  
         
-        with open("/home/andrerg01/AutoTraders/fredinhouTradingBot/Coinbase_Trader_4.0/logs/portfolio3600.pkl",'wb') as f:
-            pkl.dump(portfolio3600, f)
+#     if run2:
         
-        
-    if run2:
-        
-        granularity = 6*60*60
+#         granularity = 6*60*60
 
-        header += "Loading data for all assets at granularity " + str(granularity) + ".\n\n"
-        os.system("clear")
-        print(header)
+#         header += "Loading data for all assets at granularity " + str(granularity) + ".\n\n"
+#         os.system("clear")
+#         print(header)
 
-        allData21600 = [cf.getData(Client, asset, start, end, granularity = granularity) for asset in assets]
-        allCloseData21600 = np.array([d['close'].values for d in allData21600])
+#         allData21600 = [cf.getData(Client, asset, start, end, granularity = granularity) for asset in assets]
+#         allCloseData21600 = np.array([d['close'].values for d in allData21600])
 
-        currentScores = []
-        for strategyLetter in ['A', 'B', 'C']:
-            header += "Loading optimal parameters for strategy " + strategyLetter + " at granularity " + str(granularity) + ".\n\n"
-            os.system("clear")
-            print(header)
-            currentScores += [calculateStrategyPortfolio(allCloseData21600, assets, strategyLetter, granularity)]
-        totalScores = sum(currentScores)
-        totalScores = np.append(totalScores, [0])
-        portfolio21600 = {(assets + ['USD-USD'])[i]:totalScores[i] for i in range(len(assets + ['USD-USD']))}
+#         currentScores = []
+#         for strategyLetter in ['A', 'B', 'C']:
+#             header += "Loading optimal parameters for strategy " + strategyLetter + " at granularity " + str(granularity) + ".\n\n"
+#             os.system("clear")
+#             print(header)
+#             currentScores += [calculateStrategyPortfolio(allCloseData21600, assets, strategyLetter, granularity)]
+#         totalScores = sum(currentScores)
+#         totalScores = np.append(totalScores, [0])
+#         portfolio21600 = {(assets + ['USD-USD'])[i]:totalScores[i] for i in range(len(assets + ['USD-USD']))}
         
-        run2 = False
-        time2 = datetime.datetime.now()
-        
-        with open("/home/andrerg01/AutoTraders/fredinhouTradingBot/Coinbase_Trader_4.0/logs/portfolio21600.pkl",'wb') as f:
-            pkl.dump(portfolio21600, f)
+#         run2 = False
+#         time2 = datetime.datetime.now()
         
     if run3:
         
@@ -173,19 +180,25 @@ while True:
         run3 = False
         time3 = datetime.datetime.now()
         
-        with open("/home/andrerg01/AutoTraders/fredinhouTradingBot/Coinbase_Trader_4.0/logs/portfolio86400.pkl",'wb') as f:
-            pkl.dump(portfolio86400, f)
+
             
     if run:
-        finalPortfolio = {asset:0 for asset in (assets+['USD-USD'])}
-        for key in finalPortfolio.keys():
-            finalPortfolio[key] = portfolio3600[key] + portfolio21600[key] + portfolio86400[key]
-        finalPortfolio['USD-USD'] = 0.001
-        finalPortfolio = ff.nicefyPortfolio(finalPortfolio, 0.03)
+        with open("/home/andrerg01/AutoTraders/fredinhouTradingBot/Coinbase_Trader_4.0/logs/portfolio3600.pkl",'wb') as f:
+            pkl.dump(portfolio3600, f)
+        with open("/home/andrerg01/AutoTraders/fredinhouTradingBot/Coinbase_Trader_4.0/logs/portfolio21600.pkl",'wb') as f:
+            pkl.dump(portfolio21600, f)
+        with open("/home/andrerg01/AutoTraders/fredinhouTradingBot/Coinbase_Trader_4.0/logs/portfolio86400.pkl",'wb') as f:
+            pkl.dump(portfolio86400, f)
+        if run3:
+            finalPortfolio = {asset:0 for asset in (assets+['USD-USD'])}
+            for key in finalPortfolio.keys():
+                finalPortfolio[key] = portfolio3600[key] + portfolio21600[key] + portfolio86400[key]
+            finalPortfolio['USD-USD'] = 0.001
+            finalPortfolio = ff.nicefyPortfolio(finalPortfolio, 0.03)
 
-        header += "Final Portfolio: " + ff.printPortfolio(finalPortfolio) + ".\n\n"
-        os.system("clear")
-        print(header)
+            header += "Final Portfolio: " + ff.printPortfolio(finalPortfolio) + ".\n\n"
+            os.system("clear")
+            print(header)
         
         header += "Loading current funds and portfolio.\n\n"
         os.system("clear")
@@ -201,28 +214,29 @@ while True:
         print(header)
         
         currentPrices = {assets[i]:allCloseData3600[i][-1] for i in range(len(assets))}
-        
         buys = {}
         sells = {}
-        for key in finalPortfolio.keys():
-            if finalPortfolio[key] > currentPortfolio[key]:
-                buys[key] = finalPortfolio[key] - currentPortfolio[key]
-            elif finalPortfolio[key] < currentPortfolio[key]:
-                sells[key] = currentPortfolio[key] - finalPortfolio[key]
-        buys, sells = ff.nicefyTrades(buys, sells, 0.00)
-        for key in buys.keys():
-            if key != "USD-USD":
-                buys[key] = buys[key]*totalFunds/currentPrices[key]
-        for key in sells.keys():
-            if key != "USD-USD":
-                sells[key] = sells[key]*totalFunds/currentPrices[key]
-        
-        header += "Pruchases to be made: " + ff.printPortfolio(buys) + "\n\n"
-        header += "Sales to be made: " + ff.printPortfolio(sells) + "\n\n"
-        os.system("clear")
-        print(header)
-        
-        cf.makeTrades(Client, buys, sells)
+        if run3:
+
+            for key in finalPortfolio.keys():
+                if finalPortfolio[key] > currentPortfolio[key]:
+                    buys[key] = finalPortfolio[key] - currentPortfolio[key]
+                elif finalPortfolio[key] < currentPortfolio[key]:
+                    sells[key] = currentPortfolio[key] - finalPortfolio[key]
+            buys, sells = ff.nicefyTrades(buys, sells, 0.00)
+            for key in buys.keys():
+                if key != "USD-USD":
+                    buys[key] = buys[key]*totalFunds/currentPrices[key]
+            for key in sells.keys():
+                if key != "USD-USD":
+                    sells[key] = sells[key]*totalFunds/currentPrices[key]
+
+            header += "Pruchases to be made: " + ff.printPortfolio(buys) + "\n\n"
+            header += "Sales to be made: " + ff.printPortfolio(sells) + "\n\n"
+            os.system("clear")
+            print(header)
+
+            cf.makeTrades(Client, buys, sells)
         
         header += "Saving information and making plots.\n\n"
         os.system("clear")
@@ -241,7 +255,7 @@ while True:
         try:
             ff.makePricePlot(histTemp, ax[0, 0])
             ff.makeTimePortfolioPlot(histTemp, ax[0, 1])
-            ff.makeMarketPerformancePlot([d[histTemp.index[0]:]['close'].values for d in allData3600], ax[1, 0])
+            ff.makeMarketPerformancePlot([d[histTemp.index[0]:]['close'].values for d in allCloseData3600], ax[1, 0])
             ff.makeCurrentPortfolioPlot(histTemp, ax[1, 1])
         except:
             pass
@@ -263,7 +277,7 @@ while True:
             with open("/home/andrerg01/AutoTraders/fredinhouTradingBot/Coinbase_Trader_4.0/logs/checkpointSMS.pkl",'wb') as f:
                  pkl.dump(checkpointSMS, f)
         
-        header += "-----Sales done! Waiting for next hour.-----"
+        header += "-----Sales done! Waiting for next day.-----"
         os.system("clear")
         print(header) 
         run = False
@@ -272,8 +286,8 @@ while True:
     #To repeat every hour
     if abs(datetime.datetime.now().hour - time1.hour) >= 1:
         run1 = True
-    if (datetime.datetime.now().hour == 0 or datetime.datetime.now().hour == 6 or datetime.datetime.now().hour == 12 or datetime.datetime.now().hour == 18) and datetime.datetime.now().hour != time2.hour:
-        run2 = True
+    #if (datetime.datetime.now().hour == 0 or datetime.datetime.now().hour == 6 or datetime.datetime.now().hour == 12 or datetime.datetime.now().hour == 18) and datetime.datetime.now().hour != time2.hour:
+    #    run2 = True
     if abs(datetime.datetime.now().day - time3.day) >= 1:
         run3 = True
     if run1 or run2 or run3:
