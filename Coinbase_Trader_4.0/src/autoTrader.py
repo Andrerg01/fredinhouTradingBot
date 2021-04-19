@@ -173,11 +173,13 @@ while True:
             os.system("clear")
             print(header)
             currentScores += [calculateStrategyPortfolio(allCloseData86400, assets, strategyLetter, granularity)]
-        totalScores = sum(currentScores)
+        totalScores = [0 for j in range(len(currentScores[0]))]
+        for j in range(len(currentScores[0])):
+            if currentScores[0][j] > 0 and currentScores[1][j] > 0 and currentScores[2][j] > 0:
+                totalScores[j] = currentScores[0][j] + currentScores[1][j] + currentScores[2][j]
         totalScores = np.append(totalScores, [0])
         portfolio86400 = {(assets + ['USD-USD'])[i]:totalScores[i] for i in range(len(assets + ['USD-USD']))}   
         
-        run3 = False
         time3 = datetime.datetime.now()
         
 
@@ -193,7 +195,7 @@ while True:
             finalPortfolio = {asset:0 for asset in (assets+['USD-USD'])}
             for key in finalPortfolio.keys():
                 finalPortfolio[key] = portfolio3600[key] + portfolio21600[key] + portfolio86400[key]
-            finalPortfolio['USD-USD'] = 0.001
+            finalPortfolio['USD-USD'] = max([finalPortfolio[key] for key in finalPortfolio.keys()] + [0.0001])
             finalPortfolio = ff.nicefyPortfolio(finalPortfolio, 0.03)
 
             header += "Final Portfolio: " + ff.printPortfolio(finalPortfolio) + ".\n\n"
@@ -237,6 +239,7 @@ while True:
             print(header)
 
             cf.makeTrades(Client, buys, sells)
+            run3 = False
         
         header += "Saving information and making plots.\n\n"
         os.system("clear")
@@ -249,21 +252,30 @@ while True:
         hist = hist.append(pd.DataFrame({'Date':[datetime.datetime.now()], 'Funds':[totalFunds], 'Portfolio':[currentPortfolio], 'Rebalance':[False], 'Buys':[buys], 'Sells':[sells]}).set_index('Date'))
         
         hist.to_csv("/home/andrerg01/AutoTraders/fredinhouTradingBot/Coinbase_Trader_4.0/logs/hist.csv")
-        
         histTemp = hist[datetime.datetime.now() - datetime.timedelta(days = 7):].copy()
         fig, ax = plt.subplots(2, 2, figsize = [20,20/1.61])
         try:
             ff.makePricePlot(histTemp, ax[0, 0])
+        except:
+            pass
+        try:
             ff.makeTimePortfolioPlot(histTemp, ax[0, 1])
-            ff.makeMarketPerformancePlot([d[histTemp.index[0]:]['close'].values for d in allCloseData3600], ax[1, 0])
+        except:
+            pass
+        try:
+            ff.makeMarketPerformancePlot([d[histTemp.index[0]:]['close'].values for d in allData3600], ax[1, 0])
+        except:
+            pass
+        try:
             ff.makeCurrentPortfolioPlot(histTemp, ax[1, 1])
         except:
             pass
+        
         fig.tight_layout()
         
         fig.savefig("/home/andrerg01/AutoTraders/fredinhouTradingBot/Coinbase_Trader_4.0/logs/PortfolioPlot.png")
         #fig.savefig("/var/www/html/PortfolioPlot.png")
-        sh.copy("/home/andrerg01/AutoTraders/fredinhouTradingBot/Coinbase_Trader_4.0/logs/PortfolioPlot.png", "/var/www/html/PortfolioPlot.png")
+        sh.copy("/home/andrerg01/AutoTraders/fredinhouTradingBot/Coinbase_Trader_4.0/logs/PortfolioPlot.png", "/var/www/html/assets/images/portfolioplot-1646x1022.png")
         
         
         if totalFunds - checkpointSMS >= 10:
