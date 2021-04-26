@@ -13,7 +13,12 @@ from IPython.display import clear_output
 dbPath = '/home/andrerg01/AutoTraders/DataBase/Crypto'
 
 def clear():
-    os.system('clear')
+    try:
+        from IPython.display import clear_output
+        clear_output()
+        os.system('clear')
+    except:
+        os.system('clear')
     #clear_output()
     
 def getCandles(Client, asset, start, end, granularity, triesMax = 10, verbose = True, header = ''):
@@ -100,7 +105,7 @@ def dataPartInFileQ(asset, start, end, granularity):
     else:
         return False
 
-def getData(Client, asset, start, end, granularity, triesMax = 10, verbose = True, header = ''):
+def getData(Client, asset, start, end, granularity, triesMax = 10, verbose = True, header = '', interpolate = False):
     #First check if data is fully in file, if so, it is gathered from there.
     if dataFullInFileQ(asset, start, end, granularity):
         if verbose:
@@ -164,8 +169,20 @@ def getData(Client, asset, start, end, granularity, triesMax = 10, verbose = Tru
         cols = ['date', 'low', 'high', 'open', 'close', 'volume']
         candles = {cols[j]:[candles[i][j] for i in range(len(candles))] for j in range(len(cols))}
         data = pd.DataFrame(candles).set_index('date').sort_index()
-    return data.drop_duplicates()
-
+        
+    data = data.drop_duplicates()
+    
+    if interpolate:
+        startTemp = data.index[0]
+        endTemp = data.index[-1]
+        while startTemp <= endTemp:
+            if startTemp not in data.index:
+                data = data.append(pd.DataFrame({"date":[startTemp], "low":[np.nan], "high":[np.nan], "open":[np.nan], "close":[np.nan], "volume":[np.nan]}).set_index('date'))
+            startTemp = startTemp + datetime.timedelta(seconds = granularity)
+        data = data.sort_index()
+        data = data.interpolate()
+    return data
+    
 def updateData(Client, asset, granularity, verbose = True):
     start = datetime.datetime(2016,3,27)
     end = datetime.datetime.now()
@@ -180,7 +197,7 @@ def updateData(Client, asset, granularity, verbose = True):
         dataTemp.to_csv(path + "/" + str(startID) + "-" + str(endTempID) + "-" + str(granularity) + ".csv")
         start = start + datetime.timedelta(seconds = granularity*2**12)
         
-def getFunds(Client, assets, allCloseData):
+def getFunds(Client, assets, allCloseData, size = False):
     #Returns value invested in each asset. buy is in t
     dataDict = {assets[i]:allCloseData[i] for i in range(len(assets))}
     accs = Client.get_accounts()
@@ -190,7 +207,10 @@ def getFunds(Client, assets, allCloseData):
             if acc['currency'] + "-USD" == 'USD-USD':
                 funds[acc['currency'] + "-USD"] = eval(acc['balance'])
             else:
-                funds[acc['currency'] + "-USD"] = eval(acc['balance'])*dataDict[acc['currency'] + "-USD"][-1]
+                if size:
+                    funds[acc['currency'] + "-USD"] = eval(acc['balance'])
+                else:
+                    funds[acc['currency'] + "-USD"] = eval(acc['balance'])*dataDict[acc['currency'] + "-USD"][-1]
     return funds
 
 def getPortfolio(Client, assets, allCloseData):
@@ -271,16 +291,44 @@ def makeTrades(Client, buys, sells):
                         pct -= 0.05
                         size = buys[key]*pct
                         print("Order placement not successfull, trying again with " + str(pct*100) + "% of original amount.")
-#             if placed:
-#                 while not completed:
-#                     try:
-#                         orderStatus = Client.get_order(sellOrder['id'])['status']
-#                     except:
-#                         orderStatus = 'Error'
-#                     time.sleep(1)
-#                     if orderStatus == 'done':
-#                         print("Order to buy " + str(size) + " " + key + " has been successfully completed.")
-#                         completed = True
-#                     else:
-#                         print("Order did not yet complete, waiting 1 second and trying again.")
-#                         print(orderStatus)    
+
+def buy(Client, asset, size):
+    complete = False
+    fail = False
+    while not complete and not fail:
+        order = Client.place_market_order(product_id = asset, side = 'buy', size = size)
+        if len(order) > 0 and isinstance(order, dict):
+            if 'message' in order.keys():
+                if order['message'].startswith('size is too accurate.'):
+                    precision = -int(np.log10(eval(order['message'].split(" ")[-1])))
+                    size = round(size, precision)
+                elif order['message'].startswith('size is too small'):
+                    fail = True
+                elif order['message'].startswith('Insufficient'):
+                    fail = True
+                else:
+                    fail = True
+            elif 'id' in order.keys():
+                complete = True
+        else:
+            fail = True
+    return order
+
+def sell(Client, asset, size):
+    complete = False
+    fail = False
+    pct = 100
+    while not complete and not fail:
+        order = Client.place_market_order(product_id = asset, side = 'sell', size = size*pct/100)
+        if len(order) > 0 and isinstance(order, dict):
+            if 'message' in order.keys():
+                if order['message'].startswith('size is too accurate.'):
+                    precision = -int(np.log10(eval(order['message'].split(" ")[-1])))
+                    size = round(size, precision)
+                if order['message'].startswith('Insufficient'):
+                    pct -= 1
+            elif 'id' in order.keys():
+                complete = True
+        else:
+            fail = True
+    return order

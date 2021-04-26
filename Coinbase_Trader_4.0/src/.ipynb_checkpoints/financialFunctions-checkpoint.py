@@ -9,6 +9,13 @@ def returns(arrIn):
     return arrOut
 
 @njit(nogil = True)
+def logReturns(arrIn):
+    arrOut = np.array([np.nan for _ in range(len(arrIn))])
+    for i in range(1, len(arrIn)):
+        arrOut[i] = np.log(arrIn[i]/arrIn[i-1])
+    return arrOut
+    
+@njit(nogil = True)
 def MA(arrIn, window = 60):
     arrOut = np.array([np.nan for _ in range(len(arrIn))])
     for i in range(window, len(arrIn)):
@@ -123,7 +130,7 @@ def backtestStrategyB(arrClose, RSIperiod, RSILow, RSIHigh, nLimits):
             purchasedQ = True
             priceIn = arrClose[i]
             indexIn = i
-        elif purchasedQ and arrRSI[i-1] > RSILow and arrRSI[i+1] <= RSILow:
+        elif purchasedQ and arrRSI[i-1] > RSILow and arrRSI[i] <= RSILow:
             purchasedQ = False
             arrReturn[i] = (arrClose[i] - priceIn)/priceIn
             arrLength[i] = i - indexIn
