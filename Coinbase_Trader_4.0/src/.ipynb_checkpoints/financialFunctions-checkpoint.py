@@ -78,15 +78,66 @@ def OBV(arrInClose, arrInVol):
 @njit(nogil = True)
 def nPeriodLow(arrIn, window = 7):
     arrOut = np.array([np.nan for _ in range(len(arrIn))])
-    for i in range(window, len(arrIn)):
-        arrOut[i] = np.min(arrIn[i-window:i])
+    for i in range(len(arrIn)):
+        if i == 0:
+            arrOut[i] = arrIn[0]
+        elif i - window <= 0:
+            arrOut[i] = np.min(arrIn[:i])
+        else:
+            arrOut[i] = np.min(arrIn[i-window:i])
     return arrOut
 
 @njit(nogil = True)
 def nPeriodHigh(arrIn, window = 7):
     arrOut = np.array([np.nan for _ in range(len(arrIn))])
-    for i in range(window, len(arrIn)):
-        arrOut[i] = np.max(arrIn[i-window:i])
+    for i in range(len(arrIn)):
+        if i == 0:
+            arrOut[i] = arrIn[0]
+        elif i - window <= 0:
+            arrOut[i] = np.max(arrIn[:i])
+        else:
+            arrOut[i] = np.max(arrIn[i-window:i])
+    return arrOut
+
+#@njit(nogil = True)
+def PSAR(lowIn, highIn, openIn, closeIn, nPeriodLowWindow = 7, nPeriodHighWindow = 7, accStep = 0.02, accCeil = 0.2):
+    arrOut = np.array([np.nan for _ in range(len(closeIn))])
+    arrOut[0] = closeIn[0]
+    
+    acc = accStep
+    
+    trendSign = 1
+    EPLow = nPeriodLow(lowIn, window = nPeriodLowWindow)
+    EPHigh = nPeriodHigh(highIn, window = nPeriodLowWindow)
+    for i in range(1, len(closeIn)):
+        if trendSign == 1:
+            EP = EPHigh[i-1]
+            if EPHigh[i] > EPHigh[i-1] and acc < accCeil:
+                acc += 0.02
+        elif trendSign == -1:
+            EP = EPLow[i-1]
+            if EPLow[i] < EPLow[i-1] and acc < accCeil:
+                acc += 0.02
+                
+        arrOut[i] = arrOut[i-1] + acc*(EP - arrOut[i-1])
+        
+        if trendSign == 1 and arrOut[i] > lowIn[i-1]:
+            arrOut[i] = lowIn[i-1]
+        elif trendSign == -1 and arrOut[i] < highIn[i-1]:
+            arrOut[i] = highIn[i-1]
+        
+        if (trendSign == 1 and arrOut[i] > lowIn[i]) or (trendSign == -1 and arrOut[i] < highIn[i]):
+            trendSign = -trendSign
+            acc = accStep
+            if trendSign == 1:
+                EP = EPHigh[i-1]
+            elif trendSign == -1:
+                EP = EPLow[i-1]
+            arrOut[i] = arrOut[i-1] + acc*(EP - arrOut[i-1])
+            if trendSign == 1 and arrOut[i] > lowIn[i-1]:
+                arrOut[i] = lowIn[i-1]
+            elif trendSign == -1 and arrOut[i] < highIn[i-1]:
+                arrOut[i] = highIn[i-1]
     return arrOut
 
 @njit(nogil = True)
@@ -139,10 +190,11 @@ def backtestStrategyB(arrClose, RSIperiod, RSILow, RSIHigh, nLimits):
     arrReturn = arrReturn[~np.isnan(arrReturn)]
     arrLength = arrLength[~np.isnan(arrLength)]
     
-    if arrReturn.shape[0] < nLimits[0] or arrReturn.shape[0] > nLimits[1]:
+    if arrReturn.shape[0] < nLimits[0] or arrReturn.shape[0] > nLimits[1] or np.std(arrReturn) == 0:
         score = 0
     else:
-        score = np.mean(arrReturn)/np.std(arrReturn)
+        intReturn = np.prod(1 + arrReturn) - 1
+        score = intReturn/np.std(arrReturn)
         
     return arrReturn, arrLength, arrPurchased, score, len(arrReturn), np.array([RSIperiod, RSILow, RSIHigh])
 
@@ -168,9 +220,10 @@ def backtestStrategyC(arrClose, OSCPeriod1, OSCPeriod2, OSCPeriod3, OSCLow, OSCH
     arrReturn = arrReturn[~np.isnan(arrReturn)]
     arrLength = arrLength[~np.isnan(arrLength)]
     
-    if arrReturn.shape[0] < nLimits[0] or arrReturn.shape[0] > nLimits[1]:
+    if arrReturn.shape[0] < nLimits[0] or arrReturn.shape[0] > nLimits[1] or np.std(arrReturn) == 0:
         score = 0
     else:
+        intReturn = np.prod(1 + arrReturn) - 1
         score = np.mean(arrReturn)/np.std(arrReturn)
     return arrReturn, arrLength, arrPurchased, score, len(arrReturn), np.array([OSCPeriod1, OSCPeriod2, OSCPeriod3, OSCLow, OSCHigh])
 
@@ -253,10 +306,10 @@ def nicefyTrades(buys, sells, treshold = 0.05):
     return buys, sells
 
 def makePricePlot(hist, ax):
-    ax.plot(hist['Funds'], label = 'Total Funds', color = 'green')
+    ax.plot(hist['Funds'] - hist['Deposits'], label = 'Total Funds', color = 'green')
     ax.set_xlabel("Date")
-    ax.set_ylabel("Total Funds (USD)")
-    ax.set_title("Funds History")
+    ax.set_ylabel("Total Profits (USD)")
+    ax.set_title("Total Profits History")
     ax.grid()
     
 def makeTimePortfolioPlot(hist, ax):
@@ -323,7 +376,7 @@ def makeCurrentPortfolioPlot(hist, ax):
             if port[key] > 0 and key not in everInvestedAssets:
                 everInvestedAssets += [key]
     heights = [hist.iloc[-1]['Portfolio'][asset] for asset in hist.iloc[-1]['Portfolio'].keys()]
-    ax.bar([asset[:3] for asset in hist.iloc[-1]['Portfolio'].keys()], heights)
+    ax.bar([asset[:-4] for asset in hist.iloc[-1]['Portfolio'].keys()], heights)
     for tick in ax.get_xticklabels():
         tick.set_rotation(90)
     ax.set_xlabel("Asset")
@@ -335,10 +388,16 @@ def makeMarketPerformancePlot(allCloseRelevant, ax):
     equalWeightFunds = [1 for _ in range(len(allCloseRelevant[0]))]
     
     equalWeightReturns = [0 for _ in range(len(allCloseRelevant[0]))]
-    for i in range(len(allCloseRelevant)):
-        for j in range(1, len(allCloseRelevant[i])):
-            equalWeightReturns[j] = (allCloseRelevant[i][j] - allCloseRelevant[i][j-1])/allCloseRelevant[i][j-1]/len(allCloseRelevant)
-            equalWeightFunds[j] = equalWeightFunds[j-1]*(1+equalWeightReturns[j])
+    
+    for j in range(len(allCloseRelevant[0])):
+        equalWeightReturns[j] = sum([1/len(allCloseRelevant)*(allCloseRelevant[i][j] - allCloseRelevant[i][j-1])/allCloseRelevant[i][j-1] for i in range(len(allCloseRelevant))])
+        equalWeightFunds[j] = equalWeightFunds[j-1]*(1+equalWeightReturns[j])
+            
+    
+#     for i in range(len(allCloseRelevant)):
+#         for j in range(1, len(allCloseRelevant[i])):
+#             equalWeightReturns[j] = (allCloseRelevant[i][j] - allCloseRelevant[i][j-1])/allCloseRelevant[i][j-1]/len(allCloseRelevant)
+#             equalWeightFunds[j] = equalWeightFunds[j-1]*(1+equalWeightReturns[j])
     ax.plot(equalWeightFunds, '--', color = 'blue', label = 'Equally Weighted Backtest')    
     ax.set_title("Market Performance")
     ax.set_ylabel("Equally Weighted Portfolio Funds")

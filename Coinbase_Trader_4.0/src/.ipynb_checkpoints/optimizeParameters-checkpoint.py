@@ -23,7 +23,7 @@ import time
 import coinbaseFunctions as cf
 import utilityFunctions as uf
 import financialFunctions as ff
-
+print("shit is fixed")
 
 #Defines and initialized Client instant to access Coinbase
 with open('/home/andrerg01/AutoTraders/fredinhouTradingBot_Pvt/coinbase_credentials.pkl', 'rb') as f:
@@ -42,10 +42,12 @@ assets = ['AAVE-USD', 'ADA-USD', 'ALGO-USD', 'ATOM-USD', 'BAL-USD', 'BAND-USD', 
                  'UNI-USD','WBTC-USD', 'XLM-USD', 'XTZ-USD', 'YFI-USD', 'ZEC-USD', 'ZRX-USD']
 
 
-granularity = 60*5
+granularity = 60*60*6
 periods = 2000
 end = datetime.datetime.now()
-start = end - datetime.timedelta(seconds = granularity*periods)
+#start = end - datetime.timedelta(seconds = granularity*periods)
+start = datetime.datetime(2016,3,27)
+
 for asset in assets:
     header = 'Optimizing Strategy Parameters for ' + asset + ' at granularity ' + str(granularity) + '\n'
     cf.clear()

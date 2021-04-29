@@ -20,9 +20,9 @@ import shutil as sh
 from twilio.rest import Client as twClient
 
 #My Libraries
+import financialFunctions as ff
 import coinbaseFunctions as cf
 import utilityFunctions as uf
-import financialFunctions as ff
 
 def calculateStrategyPortfolio(allCloseData, assets, strategyLetter, granularity):
     parameters = []
@@ -44,7 +44,11 @@ def calculateStrategyPortfolio(allCloseData, assets, strategyLetter, granularity
     return currentScore
 
 #Assets to be considered for purchasing
-assets = ['ALGO-USD', 'ATOM-USD', 'BCH-USD', 'BTC-USD', 'DASH-USD', 'EOS-USD', 'ETC-USD', 'ETH-USD', 'KNC-USD', 'LINK-USD', 'LTC-USD', 'OXT-USD', 'REP-USD', 'XLM-USD', 'XTZ-USD']
+#assets = ['ALGO-USD', 'ATOM-USD', 'BCH-USD', 'BTC-USD', 'DASH-USD', 'EOS-USD', 'ETC-USD', 'ETH-USD', 'KNC-USD', 'LINK-USD', 'LTC-USD', 'OXT-USD', 'REP-USD', 'XLM-USD', 'XTZ-USD']
+#Ordered by score
+#assets = ['REP-USD', 'OXT-USD', 'EOS-USD', 'XTZ-USD', 'KNC-USD', 'ALGO-USD', 'ATOM-USD', 'DASH-USD', 'XLM-USD', 'ETC-USD', 'BCH-USD', 'LINK-USD', 'LTC-USD', 'BTC-USD', 'ETH-USD']
+assets = ['ETH-USD', 'BTC-USD', 'LTC-USD', 'LINK-USD', 'BCH-USD', 'ETC-USD', 'XLM-USD', 'DASH-USD', 'ATOM-USD', 'ALGO-USD', 'KNC-USD', 'XTZ-USD', 'EOS-USD', 'OXT-USD', 'REP-USD']
+
 with open('/home/andrerg01/AutoTraders/fredinhouTradingBot_Pvt/coinbase_credentials.pkl', 'rb') as f:
     credentials = pkl.load(f)
 Client = cbpro.AuthenticatedClient(
@@ -75,7 +79,7 @@ except:
 timeRun = datetime.datetime.now()
 timeTrades = datetime.datetime.now()
 
-buyLimit = 2
+buyLimit = 4
 
 while True:
     header = \
@@ -180,7 +184,7 @@ while True:
             for j in range(len(assets)):
                 buyState = [funds[i] > 0.5*1/buyLimit*negotiableFunds for i in range(len(assets))]
                 buyFull = sum(buyState) >= buyLimit
-                if buyHist[j][-2] and not buyState[j] and not buyFull:
+                if not buyHist[j][-3] and buyHist[j][-2] and not buyState[j] and not buyFull:
                     header += "Purchasing " + assets[j] + ".\n"
                     header += str(cf.buy(Client, assets[j], negotiableFunds*1/buyLimit/currentPrices[j])) + "\n\n"
                     buys[assets[i]] = negotiableFunds*1/buyLimit/currentPrices[j]
@@ -222,7 +226,7 @@ while True:
         
         currentPortfolio = cf.getPortfolio(Client, assets, allCloseData3600)
         
-        hist = hist.append(pd.DataFrame({'Date':[datetime.datetime.now()], 'Funds':[totalFunds], 'Portfolio':[currentPortfolio], 'Rebalance':[False], 'Buys':[buys], 'Sells':[sells]}).set_index('Date'))
+        hist = hist.append(pd.DataFrame({'Date':[datetime.datetime.now()], 'Funds':[totalFunds], 'Portfolio':[currentPortfolio], 'Rebalance':[False], 'Buys':[buys], 'Sells':[sells], 'Deposits':[hist.iloc[-1]['Deposits']]}).set_index('Date'))
         
         hist.to_csv("/home/andrerg01/AutoTraders/fredinhouTradingBot/Coinbase_Trader_4.0/logs/hist.csv")
         histTemp = hist[datetime.datetime.now() - datetime.timedelta(days = 7):].copy()
@@ -267,9 +271,9 @@ while True:
         print(header) 
         run = False
     
-    time.sleep(60)
-    #To repeat every hour
-    if abs(datetime.datetime.now().hour - timeRun.hour) >= 1:
+    time.sleep(30)
+    #To repeat every 15 minutes
+    if datetime.datetime.now().minute % 5 == 0 and datetime.datetime.now().minute != timeTrades.minute:
         run = True
     #To repeat every 6 hours
     if (datetime.datetime.now().hour == 0 or datetime.datetime.now().hour == 6 or datetime.datetime.now().hour == 12 or datetime.datetime.now().hour == 18) and datetime.datetime.now().hour != timeTrades.hour:

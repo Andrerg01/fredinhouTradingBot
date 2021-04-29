@@ -23,7 +23,7 @@ import time
 import coinbaseFunctions as cf
 import utilityFunctions as uf
 import financialFunctions as ff
-
+print("shit is fixed")
 
 #Defines and initialized Client instant to access Coinbase
 with open('/home/andrerg01/AutoTraders/fredinhouTradingBot_Pvt/coinbase_credentials.pkl', 'rb') as f:
