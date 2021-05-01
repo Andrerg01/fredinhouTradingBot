@@ -60,10 +60,9 @@ Client = cbpro.AuthenticatedClient(
 
 clientTwilio = twClient("AC4ed06be97b80927880222036093c6320", "a8410533928c1b06520cecec7ae3f6c9")
 
-
 run = False
 runTrades = False
-    
+
 try:
     with open("/home/andrerg01/AutoTraders/fredinhouTradingBot/Coinbase_Trader_4.0/logs/portfolio21600.pkl",'rb') as f:
         portfolio21600 = pkl.load(f)
@@ -181,8 +180,18 @@ while True:
             os.system("clear")
             print(header)
             
+            #Sells
             for j in range(len(assets)):
-                buyState = [funds[i] > 0.5*1/buyLimit*negotiableFunds for i in range(len(assets))]
+                if not buyHist[j][-2] and buyState[j]:
+                    header += "Selling "  + assets[j] + ".\n"
+                    header += str(cf.sell(Client, assets[j], fundsSize[j])) + "\n\n"
+                    sells[assets[i]] = fundsSize[j]
+                    os.system("clear")
+                    print(header)
+            
+            #Buys
+            for j in range(len(assets)):
+                buyState = [funds[i] > 0.1*1/buyLimit*negotiableFunds for i in range(len(assets))]
                 buyFull = sum(buyState) >= buyLimit
                 if not buyHist[j][-3] and buyHist[j][-2] and not buyState[j] and not buyFull:
                     header += "Purchasing " + assets[j] + ".\n"
@@ -190,12 +199,7 @@ while True:
                     buys[assets[i]] = negotiableFunds*1/buyLimit/currentPrices[j]
                     os.system("clear")
                     print(header)
-                elif not buyHist[j][-2] and buyState[j]:
-                    header += "Selling "  + assets[j] + ".\n"
-                    header += str(cf.sell(Client, assets[j], fundsSize[j])) + "\n\n"
-                    sells[assets[i]] = fundsSize[j]
-                    os.system("clear")
-                    print(header)
+                
                     
             header += "Done with trades for now.\n\n"
             os.system("clear")
@@ -229,7 +233,7 @@ while True:
         hist = hist.append(pd.DataFrame({'Date':[datetime.datetime.now()], 'Funds':[totalFunds], 'Portfolio':[currentPortfolio], 'Rebalance':[False], 'Buys':[buys], 'Sells':[sells], 'Deposits':[hist.iloc[-1]['Deposits']]}).set_index('Date'))
         
         hist.to_csv("/home/andrerg01/AutoTraders/fredinhouTradingBot/Coinbase_Trader_4.0/logs/hist.csv")
-        histTemp = hist[datetime.datetime.now() - datetime.timedelta(days = 7):].copy()
+        histTemp = hist[datetime.datetime.now() - datetime.timedelta(days = 30):].copy()
         fig, ax = plt.subplots(2, 2, figsize = [20,20/1.61])
         try:
             ff.makePricePlot(histTemp, ax[0, 0])

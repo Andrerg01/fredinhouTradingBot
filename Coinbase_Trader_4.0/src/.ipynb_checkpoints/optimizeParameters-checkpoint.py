@@ -36,10 +36,15 @@ Client = cbpro.AuthenticatedClient(
     )
 
 #Assets to be considered for purchasing
-assets = ['AAVE-USD', 'ADA-USD', 'ALGO-USD', 'ATOM-USD', 'BAL-USD', 'BAND-USD', 'BCH-USD', 'BNT-USD', 'BTC-USD', 'CGLD-USD', 'COMP-USD',\
-                 'DASH-USD', 'EOS-USD', 'ETC-USD', 'ETH-USD', 'FIL-USD', 'GRT-USD', 'KNC-USD', 'LINK-USD', 'LRC-USD', 'LTC-USD', 'MATIC-USD',\
+# assets = ['AAVE-USD', 'ADA-USD', 'ALGO-USD', 'ATOM-USD', 'BAL-USD', 'BAND-USD', 'BCH-USD', 'BNT-USD', 'BTC-USD', 'CGLD-USD', 'COMP-USD',\
+#                  'DASH-USD', 'EOS-USD', 'ETC-USD', 'ETH-USD', 'FIL-USD', 'GRT-USD', 'KNC-USD', 'LINK-USD', 'LRC-USD', 'LTC-USD', 'MATIC-USD',\
+#                  'MKR-USD', 'NMR-USD', 'NU-USD', 'OMG-USD', 'OXT-USD', 'REN-USD', 'REP-USD', 'SKL-USD', 'SNX-USD', 'SUSHI-USD', 'UMA-USD',
+#                  'UNI-USD','WBTC-USD', 'XLM-USD', 'XTZ-USD', 'YFI-USD', 'ZEC-USD', 'ZRX-USD']
+
+assets = ['ETH-USD', 'FIL-USD', 'GRT-USD', 'KNC-USD', 'LINK-USD', 'LRC-USD', 'LTC-USD', 'MATIC-USD',\
                  'MKR-USD', 'NMR-USD', 'NU-USD', 'OMG-USD', 'OXT-USD', 'REN-USD', 'REP-USD', 'SKL-USD', 'SNX-USD', 'SUSHI-USD', 'UMA-USD',
                  'UNI-USD','WBTC-USD', 'XLM-USD', 'XTZ-USD', 'YFI-USD', 'ZEC-USD', 'ZRX-USD']
+
 
 
 granularity = 60*60*6
@@ -58,41 +63,81 @@ for asset in assets:
     print(header)
     dataOriginal = cf.getData(Client, asset, start, end, granularity = granularity, verbose = False)
     
-    header += 'Calculating parameter combinations for strategy B\n'
+    header += 'Calculating parameter combinations for strategy A\n'
     cf.clear()
     print(header)
     
-    #Optimizing Strategy B Parameters
-    RSIperiodVals = np.arange(5,int(0.1*len(dataOriginal)))
-    RSILowVals = np.arange(20,49)
-    RSIHighVals = np.arange(51, 80)
-    #Minimum of one activation every 90 days
-    minN = int(len(dataOriginal)/90)
-    #Maximum of one activation per 4 days
-    maxN = int(len(dataOriginal)/4)
-    argCombinations = []
-    for p1 in RSIperiodVals:
-        for p2 in RSILowVals:
-            for p3 in RSIHighVals:
-                argCombinations += [(dataOriginal['close'].values, p1, p2, p3, np.array([minN, maxN], dtype = np.float64))]
+#     #Optimizing Strategy A Parameters
+#     nPeriodLowWindowVals = np.arange(5,25)
+#     nPeriodHighWindow = np.arange(5,25)
+#     accStepVals = np.linspace(0.005, 0.2, num = 15)
+#     accCeilVals = np.linspace(0.1, 1, num = 15)
+#     #Minimum of one activation every 90 days
+#     minN = int(len(dataOriginal)/90)
+#     #Maximum of one activation per 4 days
+#     maxN = int(len(dataOriginal)/4)
+#     argCombinations = []
+#     for p1 in nPeriodLowWindowVals:
+#         for p2 in nPeriodHighWindow:
+#             for p3 in accStepVals:
+#                 for p4 in accCeilVals:
+#                     if p4 > p3:
+#                         argCombinations += [(dataOriginal['low'].values, dataOriginal['high'].values, dataOriginal['open'].values, dataOriginal['close'].values, p1, p2, p3, p4, np.array([minN, maxN], dtype = np.float64))]
     
-    header += 'Calculating optimal parameters for strategy B\n'
-    cf.clear()
-    print(header)
-    with ThreadPoolExecutor(8) as ex:   
-        results = ex.map(lambda p: ff.backtestStrategyB(*p), argCombinations)
-    results = np.array([result for result in results])
     
-    results_df = pd.DataFrame(results, columns = ['returns', 'lengths', 'purchasedBool', 'score', 'N', 'parameters'])
-    results_df = results_df.sort_values(by = 'score')
-    best = results_df.tail(10).sort_values(by = 'N').iloc[-1]
+#     header += 'Calculating optimal parameters for strategy A\n'
+#     cf.clear()
+#     print(header)
+#     with ThreadPoolExecutor(8) as ex:   
+#         results = ex.map(lambda p: ff.backtestStrategyA(*p), argCombinations)
+#     results = np.array([result for result in results])
     
-    if best['score'] < 0:
-        best['score'] = 0
+#     results_df = pd.DataFrame(results, columns = ['returns', 'lengths', 'purchasedBool', 'score', 'N', 'parameters'])
+#     results_df = results_df.sort_values(by = 'score')
+#     best = results_df.tail(10).sort_values(by = 'N').iloc[-1]
+    
+#     if best['score'] < 0:
+#         best['score'] = 0
         
-    best = best.to_dict()
-    with open(cf.dbPath + '/' + asset + '/StrBParams_'+ str(granularity) + '.pkl', 'wb') as f:
-        pkl.dump(best, f)
+#     best = best.to_dict()
+#     with open(cf.dbPath + '/' + asset + '/StrAParams_'+ str(granularity) + '.pkl', 'wb') as f:
+#         pkl.dump(best, f)
+    
+#     header += 'Calculating parameter combinations for strategy B\n'
+#     cf.clear()
+#     print(header)
+    
+#     #Optimizing Strategy B Parameters
+#     RSIperiodVals = np.arange(5,int(0.1*len(dataOriginal)))
+#     RSILowVals = np.arange(20,49)
+#     RSIHighVals = np.arange(51, 80)
+#     #Minimum of one activation every 90 days
+#     minN = int(len(dataOriginal)/90)
+#     #Maximum of one activation per 4 days
+#     maxN = int(len(dataOriginal)/4)
+#     argCombinations = []
+#     for p1 in RSIperiodVals:
+#         for p2 in RSILowVals:
+#             for p3 in RSIHighVals:
+#                 argCombinations += [(dataOriginal['close'].values, p1, p2, p3, np.array([minN, maxN], dtype = np.float64))]
+    
+#     header += 'Calculating optimal parameters for strategy B\n'
+#     cf.clear()
+#     print(header)
+#     with ThreadPoolExecutor(8) as ex:   
+#         results = ex.map(lambda p: ff.backtestStrategyB(*p), argCombinations)
+#     results = np.array([result for result in results])
+    
+#     results_df = pd.DataFrame(results, columns = ['returns', 'lengths', 'purchasedBool', 'score', 'N', 'parameters'])
+#     results_df = results_df.sort_values(by = 'score')
+#     best = results_df.tail(10).sort_values(by = 'N').iloc[-1]
+    
+#     if best['score'] < 0:
+#         best['score'] = 0
+        
+#     best = best.to_dict()
+#     with open(cf.dbPath + '/' + asset + '/StrBParams_'+ str(granularity) + '.pkl', 'wb') as f:
+#         pkl.dump(best, f)
     
     header += 'Calculating parameter combinations for strategy C\n'
     cf.clear()

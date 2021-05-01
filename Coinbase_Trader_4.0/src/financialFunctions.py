@@ -99,7 +99,7 @@ def nPeriodHigh(arrIn, window = 7):
             arrOut[i] = np.max(arrIn[i-window:i])
     return arrOut
 
-#@njit(nogil = True)
+@njit(nogil = True)
 def PSAR(lowIn, highIn, openIn, closeIn, nPeriodLowWindow = 7, nPeriodHighWindow = 7, accStep = 0.02, accCeil = 0.2):
     arrOut = np.array([np.nan for _ in range(len(closeIn))])
     arrOut[0] = closeIn[0]
@@ -141,22 +141,20 @@ def PSAR(lowIn, highIn, openIn, closeIn, nPeriodLowWindow = 7, nPeriodHighWindow
     return arrOut
 
 @njit(nogil = True)
-def backtestStrategyA(arrClose, MAperiod, nDayLow, nDayHigh, nLimits):
-    arrMA = MA(arrClose, window = MAperiod)
-    arrLow = nPeriodLow(arrClose, window = nDayLow)
-    arrHigh = nPeriodHigh(arrClose, window = nDayHigh)
+def backtestStrategyA(lowIn, highIn, openIn, closeIn, nPeriodLowWindow, nPeriodHighWindow, accStep, accCeil, nLimits):
+    arrSAR = PSAR(lowIn, highIn, openIn, closeIn, nPeriodLowWindow, nPeriodHighWindow, accStep, accCeil)
     purchasedQ = False
-    arrPurchased = np.array([False for _ in range(len(arrClose))])
-    arrReturn = np.array([np.nan for _ in range(len(arrClose))])
-    arrLength = np.array([np.nan for _ in range(len(arrClose))])
-    for i in range(len(arrClose)):
-        if not purchasedQ and arrClose[i] < arrLow[i] and arrClose[i] > arrMA[i]:
+    arrPurchased = np.array([False for _ in range(len(closeIn))])
+    arrReturn = np.array([np.nan for _ in range(len(closeIn))])
+    arrLength = np.array([np.nan for _ in range(len(closeIn))])
+    for i in range(1, len(closeIn)):
+        if not purchasedQ and arrSAR[i-1] > closeIn[i-1] and arrSAR[i] < closeIn[i]:
             purchasedQ = True
-            priceIn = arrClose[i]
+            priceIn = closeIn[i]
             indexIn = i
-        elif purchasedQ and arrClose[i] > arrHigh[i]:
+        elif purchasedQ and arrSAR[i-1] < closeIn[i-1] and arrSAR[i] > closeIn[i]:
             purchasedQ = False
-            arrReturn[i] = (arrClose[i] - priceIn)/priceIn
+            arrReturn[i] = (closeIn[i] - priceIn)/priceIn
             arrLength[i] = i - indexIn
         arrPurchased[i] = purchasedQ
     arrReturn = arrReturn[~np.isnan(arrReturn)]
@@ -167,7 +165,7 @@ def backtestStrategyA(arrClose, MAperiod, nDayLow, nDayHigh, nLimits):
     else:
         score = np.mean(arrReturn)/np.std(arrReturn)
     
-    return arrReturn, arrLength, arrPurchased, score, len(arrReturn), np.array([MAperiod, nDayLow, nDayHigh])
+    return arrReturn, arrLength, arrPurchased, score, len(arrReturn), np.array([nPeriodLowWindow, nPeriodHighWindow, accStep, accCeil])
 
 @njit(nogil = True)
 def backtestStrategyB(arrClose, RSIperiod, RSILow, RSIHigh, nLimits):
@@ -211,7 +209,7 @@ def backtestStrategyC(arrClose, OSCPeriod1, OSCPeriod2, OSCPeriod3, OSCLow, OSCH
             purchasedQ = True
             priceIn = arrClose[i]
             indexIn = i
-        elif purchasedQ and arrOSC[i-1] > OSCLow and arrOSC[i+1] <= OSCLow:
+        elif purchasedQ and arrOSC[i-1] > OSCLow and arrOSC[i] <= OSCLow:
             purchasedQ = False
             arrReturn[i] = (arrClose[i] - priceIn)/priceIn
             arrLength[i] = i - indexIn
@@ -332,8 +330,9 @@ def makeTimePortfolioPlot(hist, ax):
     ax.set_xlabel("Date")
     ax.set_ylabel("Portfolio share")
     ax.grid()
-    
-def makeTimePortfolioPlot(hist, ax):
+
+
+def makeTimePortfolioPlot(hist, ax, treshold = 0.01):
     boxProps = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     everInvestedAssets = []
     for port in hist['Portfolio']:
@@ -344,30 +343,20 @@ def makeTimePortfolioPlot(hist, ax):
     for port in hist['Portfolio']:
         for asset in everInvestedAssets:
             if asset in port.keys():
-                assetInvestOverTime[asset] += [port[asset]]
+                assetInvestOverTime[asset] += [port[asset] > treshold]
             else:
-                assetInvestOverTime[asset] += [0]
-    for i in range(len(everInvestedAssets)):
-        if i == 0:
-            y1 = assetInvestOverTime[everInvestedAssets[i]]
-            ax.fill_between(hist.index, y1)
-            if assetInvestOverTime[everInvestedAssets[i]][-1] > 0.01:
-                x = hist.index[-1]
-                y = assetInvestOverTime[everInvestedAssets[i]][-1]/2
-                ax.text(x, y, everInvestedAssets[i], bbox = boxProps)
-        else:
-            y1 = assetInvestOverTime[everInvestedAssets[i]] + sum([np.array(assetInvestOverTime[everInvestedAssets[j]]) for j in range(i)])
-            y2 = sum([np.array(assetInvestOverTime[everInvestedAssets[j]]) for j in range(i)])
-            ax.fill_between(hist.index, y1, y2, where = y1 > y2, interpolate = True)
-            if assetInvestOverTime[everInvestedAssets[i]][-1] > 0.01:
-                x = hist.index[-1]
-                y = assetInvestOverTime[everInvestedAssets[i]][-1]/2 + sum([np.array(assetInvestOverTime[everInvestedAssets[j]]) for j in range(i)])[-1]
-                ax.text(x, y, everInvestedAssets[i], bbox = boxProps)
-    ax.set_title('Asset share in portfolio over time.')
-    ax.set_xlabel("Date")
-    ax.set_ylabel("Portfolio share")
-    ax.grid() 
+                assetInvestOverTime[asset] += [False]
+    for i in range(len(everInvestedAssets)):    
+        ax.fill_between(hist.index, i+np.array(assetInvestOverTime[everInvestedAssets[i]]), [i for _ in range(len(hist.index))])
+        ax.plot(hist.index, [i for _ in range(len(hist.index))], color = 'black')
+        ax.text(hist.index[-1] + (hist.index[-1] - hist.index[0])*0.01, (i + i + .7)/2, everInvestedAssets[i], bbox = boxProps)
 
+    ax.plot([hist.index[-1], hist.index[-1]], [0, len(everInvestedAssets)], '--', color = 'red')
+    ax.set_title('Asset activity in portfolio over time.')
+    ax.set_xlabel("Date")
+    ax.set_ylabel("Activity")
+    ax.get_yaxis().set_visible(False)
+    ax.grid()
     
 def makeCurrentPortfolioPlot(hist, ax):
     everInvestedAssets = []
@@ -393,11 +382,6 @@ def makeMarketPerformancePlot(allCloseRelevant, ax):
         equalWeightReturns[j] = sum([1/len(allCloseRelevant)*(allCloseRelevant[i][j] - allCloseRelevant[i][j-1])/allCloseRelevant[i][j-1] for i in range(len(allCloseRelevant))])
         equalWeightFunds[j] = equalWeightFunds[j-1]*(1+equalWeightReturns[j])
             
-    
-#     for i in range(len(allCloseRelevant)):
-#         for j in range(1, len(allCloseRelevant[i])):
-#             equalWeightReturns[j] = (allCloseRelevant[i][j] - allCloseRelevant[i][j-1])/allCloseRelevant[i][j-1]/len(allCloseRelevant)
-#             equalWeightFunds[j] = equalWeightFunds[j-1]*(1+equalWeightReturns[j])
     ax.plot(equalWeightFunds, '--', color = 'blue', label = 'Equally Weighted Backtest')    
     ax.set_title("Market Performance")
     ax.set_ylabel("Equally Weighted Portfolio Funds")
